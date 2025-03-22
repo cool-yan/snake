@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>查询 OpenAI 模型列表</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 20px; }
+        input, button { padding: 10px; margin-top: 10px; width: 100%; }
+        #response { margin-top: 20px; padding: 10px; background: #f9f9f9; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <h2>查询 OpenAI 可用模型</h2>
+    <input type="text" id="apiKey" placeholder="请输入你的 OpenAI API Key" />
+    <button onclick="getModels()">查询模型</button>
+    <div id="response"></div>
+
+    <script>
+        function getModels() {
+            const apiKey = document.getElementById("apiKey").value;
+            const responseDiv = document.getElementById("response");
+
+            if (!apiKey) {
+                alert("⚠️ 请输入 API Key！");
+                return;
+            }
+
+            responseDiv.innerHTML = "⏳ 正在查询可用模型...";
+
+            fetch("https://api.openai.com/v1/models", {
+                method: "GET",
+                headers: {
+                    "Authorization": "Bearer " + apiKey
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    responseDiv.innerHTML = `<b>❌ 错误：</b> ${data.error.message}`;
+                } else {
+                    const modelList = data.data.map(model => model.id).join("<br>");
+                    responseDiv.innerHTML = `<b>✅ 可用模型：</b><br>${modelList}`;
+                }
+            })
+            .catch(error => {
+                responseDiv.innerHTML = `<b>❌ 请求失败：</b> ${error.message}`;
+            });
+        }
+    </script>
+
+</body>
+</html>
