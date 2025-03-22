@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT 聊天机器人</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 20px; }
+        input, button { padding: 10px; margin-top: 10px; width: 100%; }
+        #chatBox { border: 1px solid #ddd; padding: 10px; height: 300px; overflow-y: scroll; }
+        .message { margin-bottom: 10px; }
+        .user { color: blue; }
+        .assistant { color: green; }
+    </style>
+</head>
+<body>
+
+    <h2>ChatGPT 聊天</h2>
+    <input type="text" id="apiKey" placeholder="请输入你的 OpenAI API Key" />
+    <div id="chatBox"></div>
+    <input type="text" id="userInput" placeholder="输入你的消息..." />
+    <button onclick="sendMessage()">发送</button>
+
+    <script>
+        function sendMessage() {
+            const apiKey = document.getElementById("apiKey").value;
+            const userInput = document.getElementById("userInput").value;
+            const chatBox = document.getElementById("chatBox");
+
+            if (!apiKey) {
+                alert("⚠️ 请输入 API Key！");
+                return;
+            }
+
+            if (!userInput) {
+                alert("⚠️ 请输入消息！");
+                return;
+            }
+
+            // 在聊天框显示用户消息
+            chatBox.innerHTML += `<div class="message user"><b>你:</b> ${userInput}</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+            document.getElementById("userInput").value = "";
+
+            // 发送 API 请求
+            fetch("https://api.openai.com/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": "Bearer " + apiKey,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: "gpt-3.5-turbo", // 你可以改成 gpt-4
+                    messages: [{ role: "user", content: userInput }]
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    chatBox.innerHTML += `<div class="message assistant"><b>❌ 错误：</b> ${data.error.message}</div>`;
+                } else {
+                    const reply = data.choices[0].message.content;
+                    chatBox.innerHTML += `<div class="message assistant"><b>ChatGPT:</b> ${reply}</div>`;
+                }
+                chatBox.scrollTop = chatBox.scrollHeight;
+            })
+            .catch(error => {
+                chatBox.innerHTML += `<div class="message assistant"><b>❌ 请求失败：</b> ${error.message}</div>`;
+            });
+        }
+    </script>
+
+</body>
+</html>
