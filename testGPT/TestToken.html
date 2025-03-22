@@ -2,56 +2,125 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DeepSeek问答助手</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
+        :root {
+            --primary-color: #0066ff;
+            --hover-color: #0052cc;
         }
+        
+        body {
+            font-family: -apple-system, Roboto, Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 15px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         .input-group {
             margin-bottom: 15px;
         }
-        input, textarea {
+
+        input, textarea, select {
             width: 100%;
-            padding: 8px;
-            margin: 5px 0;
+            padding: 12px;
+            margin: 8px 0;
             border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
         }
+
+        .token-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .token-group input {
+            flex: 1;
+            min-height: 48px;
+        }
+
         button {
-            background: #0066ff;
+            background: var(--primary-color);
             color: white;
-            padding: 10px 20px;
+            padding: 14px 24px;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
+            font-size: 16px;
+            min-width: 100px;
+            transition: background 0.3s;
+            touch-action: manipulation;
         }
-        button:hover {
-            background: #0052cc;
+
+        button:hover, button:active {
+            background: var(--hover-color);
         }
+
         #response {
             margin-top: 20px;
             padding: 15px;
             border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 8px;
             min-height: 100px;
             white-space: pre-wrap;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .token-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .token-group button {
+                width: 100%;
+                padding: 12px;
+            }
+            
+            button {
+                width: 100%;
+                margin-top: 10px;
+            }
+            
+            input, textarea {
+                font-size: 14px;
+                padding: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <h2>DeepSeek问答助手</h2>
+    <h2 style="margin-bottom: 25px; color: #333;">DeepSeek问答助手</h2>
     
     <div class="input-group">
-        <label>API Token:</label>
-        <input type="password" id="token" placeholder="请输入您的API Token">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">API Token:</label>
+        <div class="token-group">
+            <input type="password" id="token" placeholder="请输入API Token" autocapitalize="off" autocomplete="off">
+            <button onclick="pasteToken()">粘贴Token</button>
+        </div>
     </div>
 
     <div class="input-group">
-        <label>问题输入:</label>
-        <textarea id="question" rows="4" placeholder="请输入您的问题"></textarea>
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">选择模型:</label>
+        <select id="model" style="height: 48px;">
+            <option value="deepseek-chat">DeepSeek Chat</option>
+            <option value="deepseek-coder">DeepSeek Coder</option>
+            <option value="custom">自定义模型</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">问题输入:</label>
+        <textarea id="question" rows="4" placeholder="请输入问题..." style="resize: vertical;"></textarea>
     </div>
 
     <button onclick="getAnswer()">获取答案</button>
@@ -59,44 +128,84 @@
     <div id="response"></div>
 
     <script>
-        async function getAnswer() {
-            const token = document.getElementById('token').value;
-            const question = document.getElementById('question').value;
-            const responseDiv = document.getElementById('response');
+        // 安卓粘贴优化
+        async function pasteToken() {
+            try {
+                if (navigator.clipboard) {
+                    const text = await navigator.clipboard.readText();
+                    document.getElementById('token').value = text;
+                } else {
+                    // 兼容旧版安卓浏览器
+                    document.getElementById('token').select();
+                    alert('请手动粘贴 (Ctrl+V)');
+                }
+            } catch (err) {
+                showToast('请手动粘贴内容');
+            }
+        }
 
-            if (!token || !question) {
-                alert('请填写Token和问题');
+        async function getAnswer() {
+            const elements = {
+                token: document.getElementById('token'),
+                question: document.getElementById('question'),
+                model: document.getElementById('model'),
+                response: document.getElementById('response')
+            }
+
+            if (!elements.token.value || !elements.question.value) {
+                showToast('请填写Token和问题');
                 return;
             }
 
-            responseDiv.innerHTML = '请求中...';
+            elements.response.innerHTML = '<div class="loader"></div>';
+            disableButtons(true);
 
             try {
                 const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${elements.token.value}`
                     },
                     body: JSON.stringify({
-                        model: "deepseek-chat",
+                        model: elements.model.value,
                         messages: [
-                            { role: "user", content: question }
+                            { role: "user", content: elements.question.value }
                         ]
                     })
                 });
 
                 const data = await response.json();
-                
-                if (data.choices && data.choices.length > 0) {
-                    responseDiv.innerHTML = data.choices[0].message.content;
-                } else {
-                    responseDiv.innerHTML = '未收到有效回复：' + JSON.stringify(data);
-                }
+                elements.response.innerHTML = data.choices?.[0]?.message?.content || '无有效回复';
             } catch (error) {
-                responseDiv.innerHTML = '请求出错：' + error.message;
+                elements.response.innerHTML = `请求错误：${error.message}`;
+            } finally {
+                disableButtons(false);
             }
         }
+
+        // 安卓优化功能
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.textContent = msg;
+            toast.style = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:12px 20px; border-radius:8px; z-index:1000;';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        function disableButtons(state) {
+            document.querySelectorAll('button').forEach(btn => {
+                btn.disabled = state;
+                btn.style.opacity = state ? 0.7 : 1;
+            });
+        }
+
+        // 虚拟键盘适配
+        window.addEventListener('resize', () => {
+            if (document.activeElement.tagName === 'TEXTAREA') {
+                window.scrollTo(0, document.body.scrollHeight);
+            }
+        });
     </script>
 </body>
 </html>
