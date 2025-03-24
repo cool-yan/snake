@@ -7,50 +7,59 @@
         .question { margin-bottom: 10px; }
         .result { font-weight: bold; margin-top: 20px; }
     </style>
+    <script>
+         const questions = [
+            { text: "Which commands are used to list files in a directory? (Choose all that apply)", options: ["ls", "dir", "cat", "pwd"], correct: ["ls", "dir"] },
+            { text: "What command is used to display the current working directory?", options: ["pwd", "cd", "echo", "ls"], correct: ["pwd"] },
+            { text: "Which command is used to remove a file?", options: ["rm", "del", "erase", "delete"], correct: ["rm"] },
+            { text: "What command is used to create a new directory?", options: ["mkdir", "rmdir", "touch", "mkfile"], correct: ["mkdir"] },
+            { text: "Which command displays the contents of a file?", options: ["cat", "ls", "view", "display"], correct: ["cat"] },
+            { text: "Which command moves a file from one location to another?", options: ["mv", "cp", "move", "rename"], correct: ["mv"] },
+            { text: "How do you change file permissions?", options: ["chmod", "chown", "chgrp", "perms"], correct: ["chmod"] },
+            { text: "Which command is used to copy files?", options: ["cp", "copy", "mv", "duplicate"], correct: ["cp"] },
+            { text: "Which command displays currently running processes?", options: ["ps", "top", "tasklist", "jobs"], correct: ["ps", "top"] },
+            { text: "Which command shows disk usage information?", options: ["df", "du", "diskinfo", "space"], correct: ["df", "du"] },
+            { text: "What command is used to search for a pattern in a file?", options: ["grep", "find", "search", "locate"], correct: ["grep"] },
+            { text: "Which command is used to change the owner of a file?", options: ["chown", "chmod", "own", "setowner"], correct: ["chown"] },
+            { text: "Which command is used to list open network connections?", options: ["netstat", "ss", "ping", "traceroute"], correct: ["netstat", "ss"] },
+            { text: "Which command is used to restart a Linux system?", options: ["reboot", "shutdown -r", "restart", "halt"], correct: ["reboot", "shutdown -r"] },
+            { text: "Which command clears the terminal screen?", options: ["clear", "cls", "reset", "refresh"], correct: ["clear"] },
+            { text: "Which command is used to view the manual for a command?", options: ["man", "help", "info", "docs"], correct: ["man"] },
+            { text: "Which command is used to find a file by name?", options: ["find", "locate", "search", "whereis"], correct: ["find", "locate"] },
+            { text: "Which command displays the last lines of a file?", options: ["tail", "head", "last", "view"], correct: ["tail"] },
+            { text: "Which command shows the kernel version?", options: ["uname -r", "version", "kernel", "osinfo"], correct: ["uname -r"] }
+        ];
+        
+        function loadQuestions() {
+            const form = document.getElementById("quizForm");
+            questions.forEach((q, index) => {
+                const div = document.createElement("div");
+                div.className = "question";
+                div.innerHTML = `<p>${index + 1}. ${q.text}</p>` + 
+                    q.options.map(opt => `<input type='checkbox' name='q${index}' value='${opt}'> ${opt}<br>`).join("");
+                form.insertBefore(div, form.lastElementChild);
+            });
+        }
+        
+        function calculateScore() {
+            let score = 0;
+            questions.forEach((q, index) => {
+                let selected = Array.from(document.querySelectorAll(`input[name='q${index}']:checked`)).map(el => el.value);
+                if (JSON.stringify(selected.sort()) === JSON.stringify(q.correct.sort())) {
+                    score++;
+                }
+            });
+            document.getElementById("result").innerText = `Your score: ${score} / ${questions.length}`;
+        }
+        
+        window.onload = loadQuestions;
+    </script>
 </head>
 <body>
     <h2>Linux Command Quiz</h2>
     <form id="quizForm">
-        <div class="question">
-            <p>1. Which commands are used to list files in a directory? (Choose all that apply)</p>
-            <input type="checkbox" name="q1" value="ls"> ls<br>
-            <input type="checkbox" name="q1" value="dir"> dir<br>
-            <input type="checkbox" name="q1" value="cat"> cat<br>
-            <input type="checkbox" name="q1" value="pwd"> pwd<br>
-        </div>
-        
-        <div class="question">
-            <p>2. What command is used to display the current working directory?</p>
-            <input type="checkbox" name="q2" value="pwd"> pwd<br>
-            <input type="checkbox" name="q2" value="cd"> cd<br>
-            <input type="checkbox" name="q2" value="echo"> echo<br>
-            <input type="checkbox" name="q2" value="ls"> ls<br>
-        </div>
-        
-        <!-- 其他 18 道题 -->
-        
         <button type="button" onclick="calculateScore()">Calculate Score</button>
     </form>
     <p class="result" id="result"></p>
-    
-    <script>
-        function calculateScore() {
-            let score = 0;
-            let correctAnswers = {
-                q1: ["ls", "dir"],
-                q2: ["pwd"]
-                // 其他题目的正确答案
-            };
-            
-            for (let key in correctAnswers) {
-                let selected = Array.from(document.querySelectorAll(`input[name='${key}']:checked`)).map(el => el.value);
-                if (JSON.stringify(selected.sort()) === JSON.stringify(correctAnswers[key].sort())) {
-                    score++;
-                }
-            }
-            
-            document.getElementById("result").innerText = `Your score: ${score} / 20`;
-        }
-    </script>
 </body>
 </html>
