@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Linux Command Quiz</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .question { margin-bottom: 10px; }
+        .result { font-weight: bold; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h2>Linux Command Quiz</h2>
+    <form id="quizForm">
+        <div class="question">
+            <p>1. Which commands are used to list files in a directory? (Choose all that apply)</p>
+            <input type="checkbox" name="q1" value="ls"> ls<br>
+            <input type="checkbox" name="q1" value="dir"> dir<br>
+            <input type="checkbox" name="q1" value="cat"> cat<br>
+            <input type="checkbox" name="q1" value="pwd"> pwd<br>
+        </div>
+        
+        <div class="question">
+            <p>2. What command is used to display the current working directory?</p>
+            <input type="checkbox" name="q2" value="pwd"> pwd<br>
+            <input type="checkbox" name="q2" value="cd"> cd<br>
+            <input type="checkbox" name="q2" value="echo"> echo<br>
+            <input type="checkbox" name="q2" value="ls"> ls<br>
+        </div>
+        
+        <!-- 其他 18 道题 -->
+        
+        <button type="button" onclick="calculateScore()">Calculate Score</button>
+    </form>
+    <p class="result" id="result"></p>
+    
+    <script>
+        function calculateScore() {
+            let score = 0;
+            let correctAnswers = {
+                q1: ["ls", "dir"],
+                q2: ["pwd"]
+                // 其他题目的正确答案
+            };
+            
+            for (let key in correctAnswers) {
+                let selected = Array.from(document.querySelectorAll(`input[name='${key}']:checked`)).map(el => el.value);
+                if (JSON.stringify(selected.sort()) === JSON.stringify(correctAnswers[key].sort())) {
+                    score++;
+                }
+            }
+            
+            document.getElementById("result").innerText = `Your score: ${score} / 20`;
+        }
+    </script>
+</body>
+</html>
