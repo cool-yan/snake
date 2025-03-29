@@ -4,12 +4,13 @@
     <title>Testing If web can autoplay audio or not</title>
     <script>
       window.onload = function(){
-        alert("Welcome")
+        alert("Welcome !!!");
+        document.getElementById("bgm").play();
       }
     </script>
   </head>
   <body>
-    <audio src="最重要的小事.m4a" autoplay="true" controls>
+    <audio id="bgm" src="最重要的小事.m4a" autoplay="true" controls>
     </audio>
   </body>
 </html>
