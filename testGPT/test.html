@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>漫画阅读器 - 带历史记录</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>漫画阅读器 - 图片序列生成器</title>
     <style>
         * {
             margin: 0;
@@ -25,7 +24,7 @@
         
         .container {
             width: 100%;
-            max-width: 1200px;
+            max-width: 1000px;
             background: rgba(25, 25, 35, 0.85);
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -39,7 +38,6 @@
             padding: 25px 30px;
             text-align: center;
             border-bottom: 2px solid #e94560;
-            position: relative;
         }
         
         h1 {
@@ -62,7 +60,6 @@
             padding: 25px;
             background: rgba(30, 30, 40, 0.7);
             border-bottom: 1px solid #39394a;
-            position: relative;
         }
         
         .input-grid {
@@ -105,15 +102,14 @@
             justify-content: center;
             gap: 15px;
             margin-top: 10px;
-            flex-wrap: wrap;
         }
         
         button {
             background: linear-gradient(to right, #e94560, #c62a48);
             color: white;
             border: none;
-            padding: 14px 25px;
-            font-size: 1.1rem;
+            padding: 14px 35px;
+            font-size: 1.2rem;
             font-weight: 600;
             border-radius: 8px;
             cursor: pointer;
@@ -139,10 +135,6 @@
         
         .secondary-btn:hover {
             box-shadow: 0 6px 20px rgba(15, 52, 96, 0.4);
-        }
-        
-        .history-btn {
-            background: linear-gradient(to right, #0f9d58, #0b6e3e);
         }
         
         .output-section {
@@ -203,6 +195,13 @@
             color: #7f8c8d;
             font-style: italic;
             font-size: 1.3rem;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
         }
         
         .loading {
@@ -278,132 +277,6 @@
             100% { background-position: -200% 0; }
         }
         
-        /* 历史记录面板 */
-        .history-panel {
-            position: fixed;
-            top: 0;
-            right: -400px;
-            width: 380px;
-            height: 100vh;
-            background: rgba(25, 25, 35, 0.95);
-            z-index: 1000;
-            padding: 20px;
-            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.5);
-            transition: right 0.4s ease;
-            overflow-y: auto;
-            border-left: 2px solid #e94560;
-        }
-        
-        .history-panel.active {
-            right: 0;
-        }
-        
-        .history-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e94560;
-        }
-        
-        .history-title {
-            font-size: 1.8rem;
-            color: #fff;
-        }
-        
-        .close-history {
-            background: #e94560;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            color: white;
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .history-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        
-        .history-item {
-            background: rgba(40, 40, 55, 0.8);
-            padding: 15px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 1px solid #39394a;
-        }
-        
-        .history-item:hover {
-            background: rgba(60, 60, 80, 0.8);
-            transform: translateX(-5px);
-        }
-        
-        .history-url {
-            font-weight: bold;
-            color: #e94560;
-            margin-bottom: 5px;
-            word-break: break-all;
-        }
-        
-        .history-details {
-            display: flex;
-            justify-content: space-between;
-            color: #aaa;
-            font-size: 0.9rem;
-        }
-        
-        .no-history {
-            text-align: center;
-            padding: 30px;
-            color: #7f8c8d;
-            font-style: italic;
-        }
-        
-        .clear-history {
-            background: #e94560;
-            width: 100%;
-            padding: 12px;
-            margin-top: 20px;
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .clear-history:hover {
-            background: #c62a48;
-        }
-        
-        .history-toggle {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(25, 25, 35, 0.8);
-            border: 1px solid #e94560;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-            z-index: 10;
-        }
-        
-        .history-toggle:hover {
-            background: rgba(233, 69, 96, 0.8);
-        }
-        
         @media (max-width: 768px) {
             .input-grid {
                 grid-template-columns: 1fr;
@@ -420,15 +293,6 @@
             .nav-buttons {
                 bottom: 20px;
             }
-            
-            .history-panel {
-                width: 100%;
-                right: -100%;
-            }
-            
-            .history-panel.active {
-                right: 0;
-            }
         }
     </style>
 </head>
@@ -436,10 +300,6 @@
     <div class="progress-bar">
         <div class="progress" id="progress"></div>
     </div>
-    
-    <button class="history-toggle" id="historyToggle">
-        <i class="fas fa-history"></i> 历史记录
-    </button>
     
     <div class="container">
         <header>
@@ -472,13 +332,10 @@
             
             <div class="btn-container">
                 <button id="generateBtn">
-                    <i class="fas fa-book-open"></i> 加载漫画
+                    <span>加载漫画</span>
                 </button>
                 <button class="secondary-btn" id="scrollTopBtn">
-                    <i class="fas fa-arrow-up"></i> 回到顶部
-                </button>
-                <button class="history-btn" id="saveHistoryBtn">
-                    <i class="fas fa-save"></i> 保存记录
+                    <span>回到顶部</span>
                 </button>
             </div>
             
@@ -492,37 +349,16 @@
             </div>
             
             <div class="nav-buttons">
-                <div class="nav-btn" id="prevBtn"><i class="fas fa-arrow-left"></i></div>
-                <div class="nav-btn" id="nextBtn"><i class="fas fa-arrow-right"></i></div>
+                <div class="nav-btn" id="prevBtn">❮</div>
+                <div class="nav-btn" id="nextBtn">❯</div>
             </div>
         </div>
     </div>
     
     <div class="page-info" id="pageInfo">第 <span id="currentPage">0</span> 页 / 共 <span id="totalPages">0</span> 页</div>
-    
-    <!-- 历史记录面板 -->
-    <div class="history-panel" id="historyPanel">
-        <div class="history-header">
-            <h2 class="history-title"><i class="fas fa-history"></i> 历史记录</h2>
-            <button class="close-history" id="closeHistory">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        
-        <div class="history-list" id="historyList">
-            <!-- 历史记录将在这里动态生成 -->
-        </div>
-        
-        <div class="no-history" id="noHistory">暂无历史记录</div>
-        
-        <div class="clear-history" id="clearHistory">
-            <i class="fas fa-trash-alt"></i> 清除所有历史记录
-        </div>
-    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 获取DOM元素
             const generateBtn = document.getElementById('generateBtn');
             const scrollTopBtn = document.getElementById('scrollTopBtn');
             const comicViewer = document.getElementById('comicViewer');
@@ -534,153 +370,9 @@
             const currentPageSpan = document.getElementById('currentPage');
             const totalPagesSpan = document.getElementById('totalPages');
             const progressBar = document.getElementById('progress');
-            const historyToggle = document.getElementById('historyToggle');
-            const historyPanel = document.getElementById('historyPanel');
-            const closeHistory = document.getElementById('closeHistory');
-            const historyList = document.getElementById('historyList');
-            const noHistory = document.getElementById('noHistory');
-            const clearHistoryBtn = document.getElementById('clearHistory');
-            const saveHistoryBtn = document.getElementById('saveHistoryBtn');
             
             let comicPages = [];
             let currentPageIndex = 0;
-            
-            // 初始化历史记录
-            loadHistory();
-            
-            // 显示/隐藏历史记录面板
-            historyToggle.addEventListener('click', function() {
-                historyPanel.classList.toggle('active');
-            });
-            
-            closeHistory.addEventListener('click', function() {
-                historyPanel.classList.remove('active');
-            });
-            
-            // 保存当前配置到历史记录
-            saveHistoryBtn.addEventListener('click', function() {
-                const baseUrl = document.getElementById('baseUrl').value.trim();
-                const suffix = document.getElementById('suffix').value.trim();
-                const start = document.getElementById('start').value;
-                const end = document.getElementById('end').value;
-                
-                if (!baseUrl || !suffix || !start || !end) {
-                    showError('请填写所有字段后再保存');
-                    return;
-                }
-                
-                saveToHistory(baseUrl, suffix, start, end);
-                historyPanel.classList.add('active');
-            });
-            
-            // 清除历史记录
-            clearHistoryBtn.addEventListener('click', function() {
-                if (confirm('确定要清除所有历史记录吗？')) {
-                    localStorage.removeItem('comicHistory');
-                    loadHistory();
-                }
-            });
-            
-            // 保存到历史记录
-            function saveToHistory(baseUrl, suffix, start, end) {
-                const history = JSON.parse(localStorage.getItem('comicHistory') || [];
-                
-                // 检查是否已存在相同记录
-                const exists = history.some(item => 
-                    item.baseUrl === baseUrl && 
-                    item.suffix === suffix && 
-                    item.start === start && 
-                    item.end === end
-                );
-                
-                if (!exists) {
-                    // 添加到历史记录
-                    history.unshift({
-                        baseUrl,
-                        suffix,
-                        start,
-                        end,
-                        timestamp: new Date().toISOString()
-                    });
-                    
-                    // 只保留最近的10条记录
-                    if (history.length > 10) {
-                        history.pop();
-                    }
-                    
-                    localStorage.setItem('comicHistory', JSON.stringify(history));
-                    loadHistory();
-                    
-                    // 显示成功消息
-                    const successMsg = document.createElement('div');
-                    successMsg.textContent = '记录已保存！';
-                    successMsg.style.color = '#0f9d58';
-                    successMsg.style.fontWeight = 'bold';
-                    successMsg.style.textAlign = 'center';
-                    successMsg.style.marginTop = '10px';
-                    successMsg.style.animation = 'fadeOut 3s forwards';
-                    
-                    document.body.appendChild(successMsg);
-                    setTimeout(() => {
-                        document.body.removeChild(successMsg);
-                    }, 3000);
-                } else {
-                    showError('该记录已存在于历史中');
-                }
-            }
-            
-            // 加载历史记录
-            function loadHistory() {
-                const history = JSON.parse(localStorage.getItem('comicHistory')) || [];
-                historyList.innerHTML = '';
-                
-                if (history.length === 0) {
-                    noHistory.style.display = 'block';
-                    return;
-                }
-                
-                noHistory.style.display = 'none';
-                
-                history.forEach((item, index) => {
-                    const historyItem = document.createElement('div');
-                    historyItem.className = 'history-item';
-                    historyItem.dataset.index = index;
-                    
-                    const url = document.createElement('div');
-                    url.className = 'history-url';
-                    url.textContent = `${item.baseUrl}[${item.start}-${item.end}]${item.suffix}`;
-                    
-                    const details = document.createElement('div');
-                    details.className = 'history-details';
-                    
-                    const date = new Date(item.timestamp);
-                    const timeString = date.toLocaleString();
-                    
-                    details.innerHTML = `
-                        <span>${timeString}</span>
-                        <span>${item.end - item.start + 1}页</span>
-                    `;
-                    
-                    historyItem.appendChild(url);
-                    historyItem.appendChild(details);
-                    
-                    // 点击历史记录项加载配置
-                    historyItem.addEventListener('click', function() {
-                        document.getElementById('baseUrl').value = item.baseUrl;
-                        document.getElementById('suffix').value = item.suffix;
-                        document.getElementById('start').value = item.start;
-                        document.getElementById('end').value = item.end;
-                        
-                        // 自动加载漫画
-                        setTimeout(() => {
-                            generateBtn.click();
-                            historyPanel.classList.remove('active');
-                        }, 300);
-                    });
-                    
-                    historyList.appendChild(historyItem);
-                });
-            }
             
             // 显示加载状态
             function showLoading(show) {
@@ -692,11 +384,6 @@
             function showError(message) {
                 errorMsg.textContent = message;
                 errorMsg.style.display = 'block';
-                
-                // 3秒后自动隐藏
-                setTimeout(() => {
-                    errorMsg.style.display = 'none';
-                }, 3000);
             }
             
             // 更新进度条
