@@ -156,7 +156,7 @@
     }
 
     function drawItems(ctx, items, cellSize) {
-      ctx.fillStyle = "blue";
+      ctx.fillStyle = "red";
       items.forEach(({ x, y }) => {
         ctx.beginPath();
         ctx.arc(y * cellSize + cellSize / 2, x * cellSize + cellSize / 2, cellSize / 4, 0, Math.PI * 2);
