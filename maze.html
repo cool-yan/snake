@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maze Generator</title>
+  <style>
+    canvas {
+      display: block;
+      margin: auto;
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="mazeCanvas"></canvas>
+  <div id="scoreboard" style="text-align: center; margin-top: 10px;">
+    <p>Time: <span id="time">0</span> seconds</p>
+    <p>Score: <span id="score">0</span></p>
+  </div>
+
+  <script>
+    function generateMaze(startPos, endPos, mapSize) {
+      const width = mapSize.x;
+      const height = mapSize.y;
+
+      const maze = Array.from({ length: height }, () =>
+        Array.from({ length: width }, () => ({
+          visited: false,
+          walls: [true, true, true, true],
+        }))
+      );
+
+      const directions = [
+        { dx: 0, dy: 1, wall: 1 },
+        { dx: 1, dy: 0, wall: 2 },
+        { dx: 0, dy: -1, wall: 3 },
+        { dx: -1, dy: 0, wall: 0 },
+      ];
+
+      const stack = [];
+      let currentCell = { x: startPos.x, y: startPos.y };
+      maze[startPos.x][startPos.y].visited = true;
+
+      let visitedCells = 1;
+      const totalCells = width * height;
+
+      while (visitedCells < totalCells) {
+        const { x, y } = currentCell;
+        let moved = false;
+
+        const shuffledDirections = directions.sort(() => Math.random() - 0.5);
+
+        for (const { dx, dy, wall } of shuffledDirections) {
+          const nx = x + dx;
+          const ny = y + dy;
+
+          if (nx >= 0 && nx < height && ny >= 0 && ny < width && !maze[nx][ny].visited) {
+            maze[x][y].walls[wall] = false;
+            maze[nx][ny].walls[(wall + 2) % 4] = false;
+
+            maze[nx][ny].visited = true;
+
+            stack.push(currentCell);
+            currentCell = { x: nx, y: ny };
+            visitedCells++;
+            moved = true;
+            break;
+          }
+        }
+
+        if (!moved) {
+          if (stack.length > 0) {
+            currentCell = stack.pop();
+          }
+        }
+      }
+
+      return maze;
+    }
+
+    function drawMaze(canvas, maze, cellSize, startPos, endPos) {
+      const ctx = canvas.getContext("2d");
+      const height = maze.length;
+      const width = maze[0].length;
+
+      canvas.width = width * cellSize;
+      canvas.height = height * cellSize;
+
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let x = 0; x < height; x++) {
+        for (let y = 0; y < width; y++) {
+          const cell = maze[x][y];
+          const px = y * cellSize;
+          const py = x * cellSize;
+
+          ctx.strokeStyle = "black";
+          ctx.lineWidth = 2;
+
+          if (cell.walls[0]) {
+            ctx.beginPath();
+            ctx.moveTo(px, py);
+            ctx.lineTo(px + cellSize, py);
+            ctx.stroke();
+          }
+
+          if (cell.walls[1]) {
+            ctx.beginPath();
+            ctx.moveTo(px + cellSize, py);
+            ctx.lineTo(px + cellSize, py + cellSize);
+            ctx.stroke();
+          }
+
+          if (cell.walls[2]) {
+            ctx.beginPath();
+            ctx.moveTo(px, py + cellSize);
+            ctx.lineTo(px + cellSize, py + cellSize);
+            ctx.stroke();
+          }
+
+          if (cell.walls[3]) {
+            ctx.beginPath();
+            ctx.moveTo(px, py);
+            ctx.lineTo(px, py + cellSize);
+            ctx.stroke();
+          }
+        }
+      }
+
+      ctx.fillStyle = "rgba(0,0,0,0.4)";
+      ctx.fillRect(startPos.y * cellSize, startPos.x * cellSize, cellSize, cellSize);
+
+	
+      ctx.fillStyle = "yellow";
+      ctx.beginPath();
+      ctx.arc(player.y * cellSize + cellSize / 2, player.x * cellSize + cellSize / 2, cellSize / 4, 0, Math.PI * 2);
+      ctx.fill();
+
+
+      ctx.fillStyle = "rgba(0,200,0,0.4)";
+      ctx.fillRect(endPos.y * cellSize, endPos.x * cellSize, cellSize, cellSize);
+    }
+
+    function placeItems(maze, itemCount) {
+      const items = [];
+      while (items.length < itemCount) {
+        const x = Math.floor(Math.random() * maze.length);
+        const y = Math.floor(Math.random() * maze[0].length);
+        if (!items.some(item => item.x === x && item.y === y) && !(x === 0 && y === 0)) {
+          items.push({ x, y });
+        }
+      }
+      return items;
+    }
+
+    function drawItems(ctx, items, cellSize) {
+      ctx.fillStyle = "blue";
+      items.forEach(({ x, y }) => {
+        ctx.beginPath();
+        ctx.arc(y * cellSize + cellSize / 2, x * cellSize + cellSize / 2, cellSize / 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    const canvas = document.getElementById("mazeCanvas");
+    const mapScale = 30;
+    const mapSize = { x: mapScale, y: mapScale };
+    const startPos = { x: 0, y: 0 };
+    const endPos = { x: 9, y: 9 };
+    const cellSize = 40;
+
+    const maze = generateMaze(startPos, endPos, mapSize);
+    const items = placeItems(maze, 10);
+
+    let player = { x: 0, y: 0 };
+    let score = 0;
+
+    drawMaze(canvas, maze, cellSize, startPos, endPos);
+    const ctx = canvas.getContext("2d");
+    drawItems(ctx, items, cellSize);
+
+    function move(direction) {
+      const { x, y } = player;
+      const { dx, dy } = direction;
+      const nx = x + dx;
+      const ny = y + dy;
+
+      const directionIndex = [{ dx: -1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 1, dy: 0 }, { dx: 0, dy: -1 }]
+        .findIndex(d => d.dx === dx && d.dy === dy);
+
+      if (
+        nx >= 0 &&
+        nx < mapSize.x &&
+        ny >= 0 &&
+        ny < mapSize.y &&
+        !maze[x][y].walls[directionIndex]
+      ) {
+        player = { x: nx, y: ny };
+
+        const itemIndex = items.findIndex(item => item.x === nx && item.y === ny);
+        if (itemIndex !== -1) {
+          items.splice(itemIndex, 1);
+          score += 10;
+          document.getElementById("score").textContent = score;
+        }
+
+        drawMaze(canvas, maze, cellSize, startPos, endPos);
+        drawItems(ctx, items, cellSize);
+
+        ctx.fillStyle = "yellow";
+        ctx.beginPath();
+        ctx.arc(player.y * cellSize + cellSize / 2, player.x * cellSize + cellSize / 2, cellSize / 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (player.x === endPos.x && player.y === endPos.y) {
+          alert(`You win! Score: ${score}`);
+        }
+      }
+    }
+
+    document.addEventListener("keydown", e => {
+      switch (e.key) {
+        case "ArrowRight":
+          move({ dx: 0, dy: 1 });
+          break;
+        case "ArrowLeft":
+          move({ dx: 0, dy: -1 });
+          break;
+        case "ArrowUp":
+          move({ dx: -1, dy: 0 });
+          break;
+        case "ArrowDown":
+          move({ dx: 1, dy: 0 });
+          break;
+      }
+    });
+
+    let time = 0;
+    setInterval(() => {
+      time++;
+      document.getElementById("time").textContent = time;
+    }, 1000);
+  </script>
+</body>
+</html>
