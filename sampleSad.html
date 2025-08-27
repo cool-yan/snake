@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>羽毛球场地预订系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .booking-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        
+        .court-selection, .user-info {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .time-slot {
+            padding: 10px;
+            text-align: center;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .time-slot:hover {
+            background: #e9ecef;
+        }
+        
+        .time-slot.selected {
+            background: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #2980b9;
+        }
+        
+        .summary {
+            margin-top: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .summary h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .summary-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .summary-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .summary-item h4 {
+            color: #3498db;
+            margin-bottom: 5px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+        
+        @media (max-width: 768px) {
+            .booking-container {
+                flex-direction: column;
+            }
+            
+            .time-slots {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .required::after {
+            content: " *";
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-table-tennis"></i> 羽毛球场地预订</h1>
+            <p>轻松预订，畅享运动乐趣</p>
+        </header>
+        
+        <div class="booking-container">
+            <div class="court-selection">
+                <h2><i class="fas fa-map-marker-alt"></i> 场地信息</h2>
+                
+                <div class="form-group">
+                    <label for="venue" class="required">选择场馆</label>
+                    <select id="venue" required>
+                        <option value="">-- 请选择场馆 --</option>
+                        <option value="venue1">市中心羽毛球馆</option>
+                        <option value="venue2">东区运动中心</option>
+                        <option value="venue3">西城体育俱乐部</option>
+                        <option value="venue4">南区国际场馆</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="court-type" class="required">场地类型</label>
+                    <select id="court-type" required>
+                        <option value="">-- 请选择场地类型 --</option>
+                        <option value="indoor">室内场地</option>
+                        <option value="outdoor">室外场地</option>
+                        <option value="vip">VIP专用场地</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="date" class="required">预订日期</label>
+                    <input type="date" id="date" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="required">选择时段</label>
+                    <div class="time-slots">
+                        <div class="time-slot">09:00-10:30</div>
+                        <div class="time-slot">10:30-12:00</div>
+                        <div class="time-slot">13:00-14:30</div>
+                        <div class="time-slot">14:30-16:00</div>
+                        <div class="time-slot">16:00-17:30</div>
+                        <div class="time-slot">18:00-19:30</div>
+                        <div class="time-slot">19:30-21:00</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="duration" class="required">持续时间（小时）</label>
+                    <select id="duration" required>
+                        <option value="1">1小时</option>
+                        <option value="1.5">1.5小时</option>
+                        <option value="2">2小时</option>
+                        <option value="2.5">2.5小时</option>
+                        <option value="3">3小时</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="user-info">
+                <h2><i class="fas fa-user"></i> 用户信息</h2>
+                
+                <div class="form-group">
+                    <label for="name" class="required">姓名</label>
+                    <input type="text" id="name" placeholder="请输入您的姓名" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone" class="required">手机号码</label>
+                    <input type="tel" id="phone" placeholder="请输入您的手机号码" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email" class="required">电子邮箱</label>
+                    <input type="email" id="email" placeholder="请输入您的电子邮箱" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="address">地址</label>
+                    <textarea id="address" rows="3" placeholder="请输入您的地址"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">备注信息</label>
+                    <textarea id="notes" rows="3" placeholder="如有特殊要求，请在此注明"></textarea>
+                </div>
+                
+                <button type="submit">提交预订</button>
+            </div>
+        </div>
+        
+        <div class="summary">
+            <h3><i class="fas fa-receipt"></i> 预订摘要</h3>
+            <div class="summary-content">
+                <div class="summary-item">
+                    <h4>场馆信息</h4>
+                    <p>请选择场馆以查看详细信息</p>
+                </div>
+                <div class="summary-item">
+                    <h4>时间信息</h4>
+                    <p>请选择日期和时间段</p>
+                </div>
+                <div class="summary-item">
+                    <h4>费用估算</h4>
+                    <p>选择完整信息后显示价格</p>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 羽毛球场地预订系统 | 客服电话: 123-456-7890 | 邮箱: support@badminton-booking.com</p>
+        </footer>
+    </div>
+
+    <script>
+        // 时间选择功能
+        const timeSlots = document.querySelectorAll('.time-slot');
+        timeSlots.forEach(slot => {
+            slot.addEventListener('click', () => {
+                timeSlots.forEach(s => s.classList.remove('selected'));
+                slot.classList.add('selected');
+            });
+        });
+        
+        // 设置最小日期为今天
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const todayStr = `${yyyy}-${mm}-${dd}`;
+        document.getElementById('date').setAttribute('min', todayStr);
+        
+        // 表单提交功能
+        const form = document.querySelector('button[type="submit"]');
+        form.addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('预订信息已提交！我们将尽快与您确认。');
+        });
+        
+        // 场馆选择变化时更新摘要
+        document.getElementById('venue').addEventListener('change', updateSummary);
+        document.getElementById('date').addEventListener('change', updateSummary);
+        document.getElementById('duration').addEventListener('change', updateSummary);
+        
+        function updateSummary() {
+            const venueSelect = document.getElementById('venue');
+            const dateInput = document.getElementById('date');
+            const durationSelect = document.getElementById('duration');
+            
+            const venueText = venueSelect.options[venueSelect.selectedIndex].text;
+            const dateText = dateInput.value ? new Date(dateInput.value).toLocaleDateString() : '未选择';
+            const durationText = durationSelect.options[durationSelect.selectedIndex].text;
+            
+            // 简单费用计算（示例）
+            let cost = '选择完整信息后显示价格';
+            if (venueSelect.value && dateInput.value && durationSelect.value) {
+                const rate = 50; // 假设每小时50元
+                cost = `￥${rate * parseFloat(durationSelect.value)} 元`;
+            }
+            
+            document.querySelectorAll('.summary-item')[0].innerHTML = 
+                `<h4>场馆信息</h4><p>${venueText || '未选择'}</p>`;
+                
+            document.querySelectorAll('.summary-item')[1].innerHTML = 
+                `<h4>时间信息</h4><p>日期: ${dateText}<br>时长: ${durationText}</p>`;
+                
+            document.querySelectorAll('.summary-item')[2].innerHTML = 
+                `<h4>费用估算</h4><p>${cost}</p>`;
+        }
+    </script>
+</body>
+</html>
