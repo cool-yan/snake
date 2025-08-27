@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>羽毛球场地预订系统</title>
+    <title>Badminton Court Booking System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
@@ -188,47 +188,87 @@
             content: " *";
             color: #e74c3c;
         }
+        
+        .court-image {
+            width: 100%;
+            height: 200px;
+            background-color: #eee;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #777;
+            font-style: italic;
+        }
+        
+        .pricing {
+            background: #e8f4fc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .pricing h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .pricing ul {
+            list-style-type: none;
+        }
+        
+        .pricing li {
+            padding: 5px 0;
+            display: flex;
+            justify-content: space-between;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-table-tennis"></i> 羽毛球场地预订</h1>
-            <p>轻松预订，畅享运动乐趣</p>
+            <h1><i class="fas fa-table-tennis"></i> Badminton Court Booking</h1>
+            <p>Reserve your court in just a few clicks</p>
         </header>
         
         <div class="booking-container">
             <div class="court-selection">
-                <h2><i class="fas fa-map-marker-alt"></i> 场地信息</h2>
+                <h2><i class="fas fa-map-marker-alt"></i> Court Information</h2>
+                
+                <div class="court-image">
+                    [Court photo will be displayed here]
+                </div>
                 
                 <div class="form-group">
-                    <label for="venue" class="required">选择场馆</label>
+                    <label for="venue" class="required">Select Venue</label>
                     <select id="venue" required>
-                        <option value="">-- 请选择场馆 --</option>
-                        <option value="venue1">市中心羽毛球馆</option>
-                        <option value="venue2">东区运动中心</option>
-                        <option value="venue3">西城体育俱乐部</option>
-                        <option value="venue4">南区国际场馆</option>
+                        <option value="">-- Please select a venue --</option>
+                        <option value="downtown">Downtown Sports Center</option>
+                        <option value="eastside">Eastside Badminton Club</option>
+                        <option value="westside">Westside Athletic Complex</option>
+                        <option value="premium">Premium Badminton Arena</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
-                    <label for="court-type" class="required">场地类型</label>
+                    <label for="court-type" class="required">Court Type</label>
                     <select id="court-type" required>
-                        <option value="">-- 请选择场地类型 --</option>
-                        <option value="indoor">室内场地</option>
-                        <option value="outdoor">室外场地</option>
-                        <option value="vip">VIP专用场地</option>
+                        <option value="">-- Please select court type --</option>
+                        <option value="indoor">Indoor Court</option>
+                        <option value="outdoor">Outdoor Court</option>
+                        <option value="vip">VIP Court</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
-                    <label for="date" class="required">预订日期</label>
+                    <label for="date" class="required">Booking Date</label>
                     <input type="date" id="date" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="required">选择时段</label>
+                    <label class="required">Select Time Slot</label>
                     <div class="time-slots">
                         <div class="time-slot">09:00-10:30</div>
                         <div class="time-slot">10:30-12:00</div>
@@ -241,83 +281,104 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="duration" class="required">持续时间（小时）</label>
+                    <label for="duration" class="required">Duration (hours)</label>
                     <select id="duration" required>
-                        <option value="1">1小时</option>
-                        <option value="1.5">1.5小时</option>
-                        <option value="2">2小时</option>
-                        <option value="2.5">2.5小时</option>
-                        <option value="3">3小时</option>
+                        <option value="1">1 hour</option>
+                        <option value="1.5">1.5 hours</option>
+                        <option value="2">2 hours</option>
+                        <option value="2.5">2.5 hours</option>
+                        <option value="3">3 hours</option>
                     </select>
+                </div>
+                
+                <div class="pricing">
+                    <h4>Pricing Information</h4>
+                    <ul>
+                        <li><span>Indoor Court:</span> <span>$25/hour</span></li>
+                        <li><span>Outdoor Court:</span> <span>$20/hour</span></li>
+                        <li><span>VIP Court:</span> <span>$40/hour</span></li>
+                    </ul>
                 </div>
             </div>
             
             <div class="user-info">
-                <h2><i class="fas fa-user"></i> 用户信息</h2>
+                <h2><i class="fas fa-user"></i> Customer Information</h2>
                 
                 <div class="form-group">
-                    <label for="name" class="required">姓名</label>
-                    <input type="text" id="name" placeholder="请输入您的姓名" required>
+                    <label for="name" class="required">Full Name</label>
+                    <input type="text" id="name" placeholder="Enter your full name" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="phone" class="required">手机号码</label>
-                    <input type="tel" id="phone" placeholder="请输入您的手机号码" required>
+                    <label for="phone" class="required">Phone Number</label>
+                    <input type="tel" id="phone" placeholder="Enter your phone number" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="email" class="required">电子邮箱</label>
-                    <input type="email" id="email" placeholder="请输入您的电子邮箱" required>
+                    <label for="email" class="required">Email Address</label>
+                    <input type="email" id="email" placeholder="Enter your email address" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="address">地址</label>
-                    <textarea id="address" rows="3" placeholder="请输入您的地址"></textarea>
+                    <label for="address">Address</label>
+                    <textarea id="address" rows="3" placeholder="Enter your address"></textarea>
                 </div>
                 
                 <div class="form-group">
-                    <label for="notes">备注信息</label>
-                    <textarea id="notes" rows="3" placeholder="如有特殊要求，请在此注明"></textarea>
+                    <label for="players">Number of Players</label>
+                    <select id="players">
+                        <option value="1">1 person</option>
+                        <option value="2">2 people</option>
+                        <option value="3">3 people</option>
+                        <option value="4">4 people</option>
+                        <option value="5">5+ people</option>
+                    </select>
                 </div>
                 
-                <button type="submit">提交预订</button>
+                <div class="form-group">
+                    <label for="notes">Special Requests</label>
+                    <textarea id="notes" rows="3" placeholder="Any special requirements or notes"></textarea>
+                </div>
+                
+                <button type="submit">Confirm Booking</button>
             </div>
         </div>
         
         <div class="summary">
-            <h3><i class="fas fa-receipt"></i> 预订摘要</h3>
+            <h3><i class="fas fa-receipt"></i> Booking Summary</h3>
             <div class="summary-content">
                 <div class="summary-item">
-                    <h4>场馆信息</h4>
-                    <p>请选择场馆以查看详细信息</p>
+                    <h4>Venue Information</h4>
+                    <p>Please select a venue to see details</p>
                 </div>
                 <div class="summary-item">
-                    <h4>时间信息</h4>
-                    <p>请选择日期和时间段</p>
+                    <h4>Time Information</h4>
+                    <p>Please select date and time slot</p>
                 </div>
                 <div class="summary-item">
-                    <h4>费用估算</h4>
-                    <p>选择完整信息后显示价格</p>
+                    <h4>Estimated Cost</h4>
+                    <p>Price will be shown after selection</p>
                 </div>
             </div>
         </div>
         
         <footer>
-            <p>© 2023 羽毛球场地预订系统 | 客服电话: 123-456-7890 | 邮箱: support@badminton-booking.com</p>
+            <p>© 2023 Badminton Court Booking System | Customer Service: 123-456-7890 | Email: support@badminton-booking.com</p>
         </footer>
     </div>
 
     <script>
-        // 时间选择功能
+        // Time slot selection functionality
         const timeSlots = document.querySelectorAll('.time-slot');
         timeSlots.forEach(slot => {
             slot.addEventListener('click', () => {
                 timeSlots.forEach(s => s.classList.remove('selected'));
                 slot.classList.add('selected');
+                updateSummary();
             });
         });
         
-        // 设置最小日期为今天
+        // Set minimum date to today
         const today = new Date();
         const yyyy = today.getFullYear();
         const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -325,43 +386,71 @@
         const todayStr = `${yyyy}-${mm}-${dd}`;
         document.getElementById('date').setAttribute('min', todayStr);
         
-        // 表单提交功能
+        // Form submission
         const form = document.querySelector('button[type="submit"]');
         form.addEventListener('click', (e) => {
             e.preventDefault();
-            alert('预订信息已提交！我们将尽快与您确认。');
+            
+            // Basic validation
+            const venue = document.getElementById('venue').value;
+            const date = document.getElementById('date').value;
+            const timeSelected = document.querySelector('.time-slot.selected');
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            
+            if (!venue || !date || !timeSelected || !name || !email || !phone) {
+                alert('Please fill in all required fields before submitting.');
+                return;
+            }
+            
+            alert('Booking submitted successfully! We will send a confirmation email shortly.');
         });
         
-        // 场馆选择变化时更新摘要
+        // Update summary when form changes
         document.getElementById('venue').addEventListener('change', updateSummary);
+        document.getElementById('court-type').addEventListener('change', updateSummary);
         document.getElementById('date').addEventListener('change', updateSummary);
         document.getElementById('duration').addEventListener('change', updateSummary);
         
         function updateSummary() {
             const venueSelect = document.getElementById('venue');
+            const courtTypeSelect = document.getElementById('court-type');
             const dateInput = document.getElementById('date');
             const durationSelect = document.getElementById('duration');
+            const timeSelected = document.querySelector('.time-slot.selected');
             
             const venueText = venueSelect.options[venueSelect.selectedIndex].text;
-            const dateText = dateInput.value ? new Date(dateInput.value).toLocaleDateString() : '未选择';
+            const courtTypeText = courtTypeSelect.options[courtTypeSelect.selectedIndex].text;
+            const dateText = dateInput.value ? new Date(dateInput.value).toLocaleDateString() : 'Not selected';
+            const timeText = timeSelected ? timeSelected.textContent : 'Not selected';
             const durationText = durationSelect.options[durationSelect.selectedIndex].text;
             
-            // 简单费用计算（示例）
-            let cost = '选择完整信息后显示价格';
-            if (venueSelect.value && dateInput.value && durationSelect.value) {
-                const rate = 50; // 假设每小时50元
-                cost = `￥${rate * parseFloat(durationSelect.value)} 元`;
+            // Calculate cost
+            let cost = 'Please complete selection to see price';
+            if (courtTypeSelect.value && durationSelect.value) {
+                const rates = {
+                    'indoor': 25,
+                    'outdoor': 20,
+                    'vip': 40
+                };
+                
+                const rate = rates[courtTypeSelect.value] || 25;
+                cost = `$${rate * parseFloat(durationSelect.value)}`;
             }
             
             document.querySelectorAll('.summary-item')[0].innerHTML = 
-                `<h4>场馆信息</h4><p>${venueText || '未选择'}</p>`;
+                `<h4>Venue Information</h4><p>${venueText || 'Not selected'}<br>${courtTypeText || 'Not selected'}</p>`;
                 
             document.querySelectorAll('.summary-item')[1].innerHTML = 
-                `<h4>时间信息</h4><p>日期: ${dateText}<br>时长: ${durationText}</p>`;
+                `<h4>Time Information</h4><p>Date: ${dateText}<br>Time: ${timeText}<br>Duration: ${durationText}</p>`;
                 
             document.querySelectorAll('.summary-item')[2].innerHTML = 
-                `<h4>费用估算</h4><p>${cost}</p>`;
+                `<h4>Estimated Cost</h4><p>${cost}</p>`;
         }
+        
+        // Initialize with today's date
+        document.getElementById('date').value = todayStr;
     </script>
 </body>
 </html>
