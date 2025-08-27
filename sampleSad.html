@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Badminton Court Booking System</title>
+    <title>Badminton Court & Equipment Booking</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
@@ -51,7 +51,7 @@
             gap: 30px;
         }
         
-        .court-selection, .user-info {
+        .court-selection, .user-info, .additional-services {
             flex: 1;
             min-width: 300px;
             background: white;
@@ -224,13 +224,79 @@
             display: flex;
             justify-content: space-between;
         }
+        
+        .equipment-item, .coach-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        
+        .equipment-details, .coach-details {
+            flex: 1;
+        }
+        
+        .equipment-controls, .coach-controls {
+            display: flex;
+            align-items: center;
+        }
+        
+        .quantity {
+            width: 60px;
+            text-align: center;
+            margin: 0 10px;
+        }
+        
+        .quantity-btn {
+            width: 30px;
+            height: 30px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .coach-select {
+            width: 80px;
+            margin-left: 10px;
+        }
+        
+        .section-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+        
+        .section-content {
+            max-height: 500px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .section-content.collapsed {
+            max-height: 0;
+        }
+        
+        .toggle-icon {
+            transition: transform 0.3s;
+        }
+        
+        .collapsed .toggle-icon {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-table-tennis"></i> Badminton Court Booking</h1>
-            <p>Reserve your court in just a few clicks</p>
+            <h1><i class="fas fa-table-tennis"></i> Badminton Court & Equipment Booking</h1>
+            <p>Reserve your court and equipment in just a few clicks</p>
         </header>
         
         <div class="booking-container">
@@ -292,11 +358,115 @@
                 </div>
                 
                 <div class="pricing">
-                    <h4>Pricing Information</h4>
+                    <h4>Court Pricing</h4>
                     <ul>
                         <li><span>Indoor Court:</span> <span>$25/hour</span></li>
                         <li><span>Outdoor Court:</span> <span>$20/hour</span></li>
                         <li><span>VIP Court:</span> <span>$40/hour</span></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="additional-services">
+                <div class="section-toggle" id="equipment-toggle">
+                    <h2><i class="fas fa-tshirt"></i> Equipment Rental</h2>
+                    <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span>
+                </div>
+                
+                <div class="section-content" id="equipment-content">
+                    <div class="form-group">
+                        <p>Select equipment you'd like to rent (optional):</p>
+                    </div>
+                    
+                    <div class="equipment-item">
+                        <div class="equipment-details">
+                            <h4>Racquet</h4>
+                            <p>$5 per racquet</p>
+                        </div>
+                        <div class="equipment-controls">
+                            <button class="quantity-btn" onclick="adjustQuantity('racquet', -1)">-</button>
+                            <input type="number" id="racquet-quantity" class="quantity" value="0" min="0" max="10">
+                            <button class="quantity-btn" onclick="adjustQuantity('racquet', 1)">+</button>
+                        </div>
+                    </div>
+                    
+                    <div class="equipment-item">
+                        <div class="equipment-details">
+                            <h4>Shuttlecocks (tube of 6)</h4>
+                            <p>$8 per tube</p>
+                        </div>
+                        <div class="equipment-controls">
+                            <button class="quantity-btn" onclick="adjustQuantity('shuttlecock', -1)">-</button>
+                            <input type="number" id="shuttlecock-quantity" class="quantity" value="0" min="0" max="10">
+                            <button class="quantity-btn" onclick="adjustQuantity('shuttlecock', 1)">+</button>
+                        </div>
+                    </div>
+                    
+                    <div class="equipment-item">
+                        <div class="equipment-details">
+                            <h4>Sports Shoes</h4>
+                            <p>$7 per pair</p>
+                        </div>
+                        <div class="equipment-controls">
+                            <button class="quantity-btn" onclick="adjustQuantity('shoes', -1)">-</button>
+                            <input type="number" id="shoes-quantity" class="quantity" value="0" min="0" max="10">
+                            <button class="quantity-btn" onclick="adjustQuantity('shoes', 1)">+</button>
+                        </div>
+                    </div>
+                    
+                    <div class="equipment-item">
+                        <div class="equipment-details">
+                            <h4>Sports Attire</h4>
+                            <p>$10 per set</p>
+                        </div>
+                        <div class="equipment-controls">
+                            <button class="quantity-btn" onclick="adjustQuantity('attire', -1)">-</button>
+                            <input type="number" id="attire-quantity" class="quantity" value="0" min="0" max="10">
+                            <button class="quantity-btn" onclick="adjustQuantity('attire', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section-toggle" id="coach-toggle">
+                    <h2><i class="fas fa-user-graduate"></i> Coach Hiring</h2>
+                    <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span>
+                </div>
+                
+                <div class="section-content" id="coach-content">
+                    <div class="form-group">
+                        <p>Would you like to hire a coach? (optional):</p>
+                    </div>
+                    
+                    <div class="coach-option">
+                        <div class="coach-details">
+                            <h4>Professional Coach</h4>
+                            <p>$30 per hour</p>
+                        </div>
+                        <div class="coach-controls">
+                            <label for="coach-hours">Hours:</label>
+                            <select id="coach-hours" class="coach-select">
+                                <option value="0">None</option>
+                                <option value="1">1 hour</option>
+                                <option value="1.5">1.5 hours</option>
+                                <option value="2">2 hours</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="coach-notes">Special requests for coach:</label>
+                        <textarea id="coach-notes" rows="2" placeholder="e.g., focus on backhand technique, beginner level"></textarea>
+                    </div>
+                </div>
+                
+                <div class="pricing">
+                    <h4>Additional Services Pricing</h4>
+                    <ul>
+                        <li><span>Racquet:</span> <span>$5 each</span></li>
+                        <li><span>Shuttlecocks:</span> <span>$8 per tube</span></li>
+                        <li><span>Sports Shoes:</span> <span>$7 per pair</span></li>
+                        <li><span>Sports Attire:</span> <span>$10 per set</span></li>
+                        <li><span>Professional Coach:</span> <span>$30 per hour</span></li>
                     </ul>
                 </div>
             </div>
@@ -321,14 +491,14 @@
                 
                 <div class="form-group">
                     <label for="address">Address</label>
-                    <textarea id="address" rows="3" placeholder="Enter your address"></textarea>
+                    <textarea id="address" rows="2" placeholder="Enter your address"></textarea>
                 </div>
                 
                 <div class="form-group">
                     <label for="players">Number of Players</label>
                     <select id="players">
                         <option value="1">1 person</option>
-                        <option value="2">2 people</option>
+                        <option value="2" selected>2 people</option>
                         <option value="3">3 people</option>
                         <option value="4">4 people</option>
                         <option value="5">5+ people</option>
@@ -337,7 +507,7 @@
                 
                 <div class="form-group">
                     <label for="notes">Special Requests</label>
-                    <textarea id="notes" rows="3" placeholder="Any special requirements or notes"></textarea>
+                    <textarea id="notes" rows="2" placeholder="Any special requirements or notes"></textarea>
                 </div>
                 
                 <button type="submit">Confirm Booking</button>
@@ -354,6 +524,10 @@
                 <div class="summary-item">
                     <h4>Time Information</h4>
                     <p>Please select date and time slot</p>
+                </div>
+                <div class="summary-item">
+                    <h4>Additional Services</h4>
+                    <p>No additional services selected</p>
                 </div>
                 <div class="summary-item">
                     <h4>Estimated Cost</h4>
@@ -412,6 +586,34 @@
         document.getElementById('court-type').addEventListener('change', updateSummary);
         document.getElementById('date').addEventListener('change', updateSummary);
         document.getElementById('duration').addEventListener('change', updateSummary);
+        document.getElementById('racquet-quantity').addEventListener('change', updateSummary);
+        document.getElementById('shuttlecock-quantity').addEventListener('change', updateSummary);
+        document.getElementById('shoes-quantity').addEventListener('change', updateSummary);
+        document.getElementById('attire-quantity').addEventListener('change', updateSummary);
+        document.getElementById('coach-hours').addEventListener('change', updateSummary);
+        
+        // Equipment quantity adjustment
+        function adjustQuantity(item, change) {
+            const input = document.getElementById(`${item}-quantity`);
+            let newValue = parseInt(input.value) + change;
+            if (newValue < 0) newValue = 0;
+            if (newValue > 10) newValue = 10;
+            input.value = newValue;
+            updateSummary();
+        }
+        
+        // Toggle section collapse/expand
+        document.getElementById('equipment-toggle').addEventListener('click', function() {
+            const content = document.getElementById('equipment-content');
+            content.classList.toggle('collapsed');
+            this.querySelector('.toggle-icon').classList.toggle('collapsed');
+        });
+        
+        document.getElementById('coach-toggle').addEventListener('click', function() {
+            const content = document.getElementById('coach-content');
+            content.classList.toggle('collapsed');
+            this.querySelector('.toggle-icon').classList.toggle('collapsed');
+        });
         
         function updateSummary() {
             const venueSelect = document.getElementById('venue');
@@ -426,8 +628,8 @@
             const timeText = timeSelected ? timeSelected.textContent : 'Not selected';
             const durationText = durationSelect.options[durationSelect.selectedIndex].text;
             
-            // Calculate cost
-            let cost = 'Please complete selection to see price';
+            // Calculate court cost
+            let courtCost = 0;
             if (courtTypeSelect.value && durationSelect.value) {
                 const rates = {
                     'indoor': 25,
@@ -436,8 +638,30 @@
                 };
                 
                 const rate = rates[courtTypeSelect.value] || 25;
-                cost = `$${rate * parseFloat(durationSelect.value)}`;
+                courtCost = rate * parseFloat(durationSelect.value);
             }
+            
+            // Calculate equipment cost
+            const racquetQty = parseInt(document.getElementById('racquet-quantity').value) || 0;
+            const shuttlecockQty = parseInt(document.getElementById('shuttlecock-quantity').value) || 0;
+            const shoesQty = parseInt(document.getElementById('shoes-quantity').value) || 0;
+            const attireQty = parseInt(document.getElementById('attire-quantity').value) || 0;
+            const coachHours = parseFloat(document.getElementById('coach-hours').value) || 0;
+            
+            const equipmentCost = (racquetQty * 5) + (shuttlecockQty * 8) + (shoesQty * 7) + (attireQty * 10);
+            const coachCost = coachHours * 30;
+            
+            const totalCost = courtCost + equipmentCost + coachCost;
+            
+            // Build services text
+            let servicesText = '';
+            if (racquetQty > 0) servicesText += `Racquets: ${racquetQty}<br>`;
+            if (shuttlecockQty > 0) servicesText += `Shuttlecocks: ${shuttlecockQty}<br>`;
+            if (shoesQty > 0) servicesText += `Shoes: ${shoesQty}<br>`;
+            if (attireQty > 0) servicesText += `Attire: ${attireQty}<br>`;
+            if (coachHours > 0) servicesText += `Coach: ${coachHours} hours<br>`;
+            
+            if (!servicesText) servicesText = 'No additional services selected';
             
             document.querySelectorAll('.summary-item')[0].innerHTML = 
                 `<h4>Venue Information</h4><p>${venueText || 'Not selected'}<br>${courtTypeText || 'Not selected'}</p>`;
@@ -446,7 +670,10 @@
                 `<h4>Time Information</h4><p>Date: ${dateText}<br>Time: ${timeText}<br>Duration: ${durationText}</p>`;
                 
             document.querySelectorAll('.summary-item')[2].innerHTML = 
-                `<h4>Estimated Cost</h4><p>${cost}</p>`;
+                `<h4>Additional Services</h4><p>${servicesText}</p>`;
+                
+            document.querySelectorAll('.summary-item')[3].innerHTML = 
+                `<h4>Estimated Cost</h4><p>Court: $${courtCost.toFixed(2)}<br>Extras: $${(equipmentCost + coachCost).toFixed(2)}<br>Total: $${totalCost.toFixed(2)}</p>`;
         }
         
         // Initialize with today's date
