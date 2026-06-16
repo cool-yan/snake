@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1c1c20">
+<title>随记</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --sidebar-bg: #1c1c20;
+    --accent: #7c6ef5;
+    --accent-light: #9d93f7;
+    --content-bg: #f5f3ee;
+    --bubble-bg: #ffffff;
+    --text-primary: #1a1a1a;
+    --text-secondary: #6b6b6b;
+    --text-muted: #9e9e9e;
+    --border: #e8e5df;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--content-bg);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ══════════════════════════════
+     SCREEN MANAGEMENT
+  ══════════════════════════════ */
+  .screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--content-bg);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .screen.hidden { transform: translateX(100%); pointer-events: none; }
+  .screen.slide-left { transform: translateX(-30%); pointer-events: none; }
+
+  /* ══════════════════════════════
+     TOPBAR
+  ══════════════════════════════ */
+  .topbar {
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    padding-top: calc(var(--safe-top) + 12px);
+    height: calc(56px + var(--safe-top));
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    gap: 12px;
+    z-index: 10;
+  }
+
+  .topbar-title {
+    flex: 1;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .topbar-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-top: 1px;
+  }
+
+  .icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-primary);
+    flex-shrink: 0;
+    transition: background 0.1s;
+    -webkit-user-select: none;
+  }
+
+  .icon-btn:active { background: #f0f0f0; }
+
+  /* ══════════════════════════════
+     SCREEN 1: CATEGORY LIST
+  ══════════════════════════════ */
+  #screen-home .topbar { background: var(--sidebar-bg); border-bottom: 1px solid #2a2a30; }
+  #screen-home .topbar-title { color: #fff; font-size: 20px; font-weight: 700; letter-spacing: 1px; }
+  #screen-home .topbar-sub { color: #555; }
+  #screen-home .icon-btn { color: #aaa; }
+  #screen-home .icon-btn:active { background: #2a2a30; }
+  #screen-home { background: var(--sidebar-bg); }
+
+  #category-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .category-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.1s;
+    gap: 12px;
+    margin-bottom: 2px;
+  }
+
+  .category-item:active { background: #2a2a30; }
+
+  .cat-emoji {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #2a2a30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .cat-info { flex: 1; min-width: 0; }
+
+  .cat-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: #eee;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cat-preview {
+    font-size: 12px;
+    color: #555;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cat-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .cat-count {
+    font-size: 11px;
+    background: var(--accent);
+    color: #fff;
+    padding: 2px 7px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .cat-count.zero { background: #2a2a30; color: #555; }
+
+  .cat-arrow { color: #444; font-size: 16px; }
+
+  /* Empty home */
+  #home-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #444;
+    text-align: center;
+    padding: 40px;
+  }
+  #home-empty .emoji { font-size: 56px; margin-bottom: 16px; }
+  #home-empty h3 { font-size: 16px; color: #888; font-weight: 500; }
+  #home-empty p { font-size: 13px; color: #555; margin-top: 8px; line-height: 1.6; }
+
+  /* FAB */
+  #fab {
+    position: fixed;
+    bottom: calc(24px + var(--safe-bottom));
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(124, 110, 245, 0.5);
+    z-index: 50;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  #fab:active { transform: scale(0.94); box-shadow: 0 2px 8px rgba(124,110,245,0.4); }
+
+  /* ══════════════════════════════
+     SCREEN 2: CHAT
+  ══════════════════════════════ */
+  #screen-chat { background: var(--content-bg); }
+
+  #screen-chat .topbar { gap: 8px; }
+
+  #filter-scroll {
+    display: flex;
+    gap: 6px;
+    padding: 8px 16px;
+    overflow-x: auto;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  #filter-scroll::-webkit-scrollbar { display: none; }
+
+  .filter-chip {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    font-weight: 500;
+    transition: opacity 0.1s;
+    -webkit-user-select: none;
+  }
+  .filter-chip:active { opacity: 0.7; }
+  .filter-chip.all { background: #f0eee9; color: var(--text-secondary); }
+  .filter-chip.all.active { background: var(--accent); color: #fff; }
+
+  /* Messages */
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .date-divider {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 4px 0 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+  .date-divider::before, .date-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .msg-row {
+    display: flex;
+    justify-content: flex-end;
+    animation: popIn 0.2s ease;
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-wrap {
+    max-width: 82%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .bubble {
+    background: #fff;
+    border-radius: 18px 4px 18px 18px;
+    padding: 10px 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .msg-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 2px;
+  }
+
+  .msg-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+
+  .msg-time { font-size: 11px; color: var(--text-muted); }
+
+  /* Long press delete */
+  .msg-row.selected .bubble {
+    box-shadow: 0 0 0 2px var(--accent), 0 1px 4px rgba(0,0,0,0.07);
+  }
+
+  /* Empty chat */
+  #chat-empty {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 40px;
+  }
+  #chat-empty .emoji { font-size: 48px; margin-bottom: 12px; }
+  #chat-empty h3 { font-size: 15px; color: var(--text-secondary); font-weight: 500; }
+  #chat-empty p { font-size: 12px; margin-top: 6px; }
+
+  /* Input */
+  #input-area {
+    background: #fff;
+    border-top: 1px solid var(--border);
+    padding-bottom: calc(8px + var(--safe-bottom));
+    flex-shrink: 0;
+  }
+
+  #tag-bar {
+    display: flex;
+    gap: 6px;
+    padding: 8px 12px 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    align-items: center;
+  }
+  #tag-bar::-webkit-scrollbar { display: none; }
+
+  #tag-bar-label { font-size: 11px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
+
+  .tag-chip {
+    padding: 5px 11px;
+    border-radius: 20px;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+    border: 2px solid transparent;
+    font-weight: 600;
+    font-family: inherit;
+    transition: border-color 0.15s;
+    -webkit-user-select: none;
+    flex-shrink: 0;
+  }
+  .tag-chip:active { opacity: 0.75; }
+  .tag-chip.selected { border-color: var(--accent); }
+
+  .tag-add {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+    border: 1.5px dashed #ccc;
+    background: transparent;
+    color: #999;
+    font-family: inherit;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .tag-add:active { border-color: var(--accent); color: var(--accent); }
+
+  #input-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  #note-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 22px;
+    font-size: 15px;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    background: #f8f7f4;
+    color: var(--text-primary);
+    min-height: 44px;
+    max-height: 110px;
+    line-height: 1.5;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+  #note-input:focus { border-color: var(--accent); background: #fff; }
+  #note-input::placeholder { color: #bbb; }
+
+  #send-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.12s, background 0.12s;
+  }
+  #send-btn:active { transform: scale(0.92); background: #6a5de0; }
+
+  /* Delete bar (long press) */
+  #delete-bar {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: #fff;
+    border-top: 1px solid var(--border);
+    padding: 14px 20px;
+    padding-bottom: calc(14px + var(--safe-bottom));
+    flex-direction: row;
+    gap: 12px;
+    z-index: 200;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  }
+
+  .del-cancel {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: transparent;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .del-confirm {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background: #ff4444;
+    color: #fff;
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* ══════════════════════════════
+     MODALS
+  ══════════════════════════════ */
+  .sheet-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 300;
+    display: none;
+    align-items: flex-end;
+  }
+  .sheet-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .sheet {
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    width: 100%;
+    padding: 20px;
+    padding-bottom: calc(20px + var(--safe-bottom));
+    animation: slideUp 0.25s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+
+  .sheet-handle {
+    width: 36px; height: 4px;
+    background: #e0ddd8;
+    border-radius: 2px;
+    margin: 0 auto 20px;
+  }
+
+  .sheet h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--text-primary); }
+
+  .sheet-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    display: block;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  .sheet input {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 15px;
+    outline: none;
+    font-family: inherit;
+    margin-bottom: 14px;
+    color: var(--text-primary);
+    background: #fafaf8;
+    -webkit-appearance: none;
+    transition: border-color 0.15s;
+  }
+  .sheet input:focus { border-color: var(--accent); background: #fff; }
+
+  .emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .emoji-opt {
+    height: 52px;
+    border-radius: 12px;
+    border: 2px solid #eee;
+    background: #fafaf8;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .emoji-opt.sel { border-color: var(--accent); background: #ede9ff; }
+  .emoji-opt:active { transform: scale(0.93); }
+
+  .color-grid {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .color-opt {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    transition: all 0.1s;
+  }
+  .color-opt.sel { border-color: var(--accent); transform: scale(1.1); }
+  .color-opt:active { transform: scale(0.95); }
+
+  .sheet-actions { display: flex; gap: 10px; margin-top: 4px; }
+
+  .btn-cancel {
+    flex: 1; padding: 13px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  .btn-cancel:active { background: #f5f5f5; }
+
+  .btn-primary {
+    flex: 1; padding: 13px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-primary:active { background: #6a5de0; }
+
+  /* Context menu for long press */
+  #ctx-menu {
+    position: fixed;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    z-index: 400;
+    overflow: hidden;
+    display: none;
+    min-width: 140px;
+  }
+
+  .ctx-item {
+    padding: 13px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    border-bottom: 1px solid #f5f5f5;
+    color: var(--text-primary);
+  }
+  .ctx-item:last-child { border-bottom: none; }
+  .ctx-item:active { background: #f5f5f5; }
+  .ctx-item.danger { color: #f44; }
+</style>
+</head>
+<body>
+
+<!-- ══ SCREEN 1: HOME ══ -->
+<div class="screen" id="screen-home">
+  <div class="topbar">
+    <div class="topbar-title">
+      随记
+      <div class="topbar-sub">你的私人记事空间</div>
+    </div>
+    <button class="icon-btn" onclick="openNewCatSheet()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+  </div>
+  <div id="category-list"></div>
+  <div id="home-empty" style="display:none">
+    <div class="emoji">✦</div>
+    <h3>还没有任何类别</h3>
+    <p>点右上角 ＋ 新建一个类别<br>比如「项目随笔」「读书摘录」</p>
+  </div>
+</div>
+
+<!-- ══ SCREEN 2: CHAT ══ -->
+<div class="screen hidden" id="screen-chat">
+  <div class="topbar">
+    <button class="icon-btn" onclick="goHome()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div style="flex:1;min-width:0">
+      <div class="topbar-title" id="chat-cat-title"></div>
+      <div class="topbar-sub" id="chat-cat-sub"></div>
+    </div>
+    <button class="icon-btn" id="chat-more-btn" onclick="openCatMenu()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/></svg>
+    </button>
+  </div>
+  <div id="filter-scroll"></div>
+  <div id="messages"></div>
+  <div id="chat-empty">
+    <div class="emoji" id="chat-empty-emoji"></div>
+    <h3 id="chat-empty-title"></h3>
+    <p id="chat-empty-sub"></p>
+  </div>
+  <div id="input-area">
+    <div id="tag-bar">
+      <span id="tag-bar-label">标签：</span>
+    </div>
+    <div id="input-row">
+      <textarea id="note-input" placeholder="写点什么…" rows="1"></textarea>
+      <button id="send-btn" onclick="sendNote()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Context Menu -->
+<div id="ctx-menu"></div>
+<div id="ctx-overlay" onclick="closeCtx()" style="display:none;position:fixed;inset:0;z-index:399"></div>
+
+<!-- ══ SHEET: New Category ══ -->
+<div class="sheet-overlay" id="sheet-cat" onclick="closeSheet('sheet-cat',event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>新建类别</h3>
+    <span class="sheet-label">选择图标</span>
+    <div class="emoji-grid" id="emoji-grid"></div>
+    <span class="sheet-label">类别名称</span>
+    <input type="text" id="cat-name-input" placeholder="例如：项目随笔、读书摘录…" maxlength="20">
+    <div class="sheet-actions">
+      <button class="btn-cancel" onclick="closeSheet('sheet-cat')">取消</button>
+      <button class="btn-primary" onclick="createCategory()">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SHEET: New Tag ══ -->
+<div class="sheet-overlay" id="sheet-tag" onclick="closeSheet('sheet-tag',event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>新建标签</h3>
+    <span class="sheet-label">标签名称</span>
+    <input type="text" id="tag-name-input" placeholder="例如：灵感、待办、重要…" maxlength="12">
+    <span class="sheet-label">颜色</span>
+    <div class="color-grid" id="color-grid"></div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" onclick="closeSheet('sheet-tag')">取消</button>
+      <button class="btn-primary" onclick="createTag()">创建</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Constants ──
+const EMOJIS = ['📝','💡','🔖','⭐','🎯','📚','💼','🌱','🎨','🔍','💬','🗺️','🏷️','🧠','✨'];
+const PALETTE = [
+  { bg:'#dbeafe', text:'#1d4ed8' },
+  { bg:'#fef3c7', text:'#92400e' },
+  { bg:'#dcfce7', text:'#166534' },
+  { bg:'#fce7f3', text:'#9d174d' },
+  { bg:'#ede9fe', text:'#5b21b6' },
+  { bg:'#fee2e2', text:'#991b1b' },
+  { bg:'#ccfbf1', text:'#0f766e' },
+  { bg:'#fef9c3', text:'#854d0e' },
+];
+
+// ── State ──
+let state = { categories:[], notes:[], tags:[], activeCatId:null, activeTagFilter:null, selectedTagId:null, selEmoji:EMOJIS[0], selColor:0 };
+let selectedMsgId = null;
+
+function save() { try { localStorage.setItem('suiji2', JSON.stringify(state)); } catch(e){} }
+function load() { try { const s=localStorage.getItem('suiji2'); if(s) state={...state,...JSON.parse(s)}; } catch(e){} }
+function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function fmtTime(ts) {
+  return new Date(ts).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+}
+function fmtDate(ts) {
+  const d=new Date(ts), t=new Date();
+  const y=new Date(t); y.setDate(t.getDate()-1);
+  if(d.toDateString()===t.toDateString()) return '今天';
+  if(d.toDateString()===y.toDateString()) return '昨天';
+  return d.toLocaleDateString('zh-CN',{month:'long',day:'numeric'});
+}
+
+// ── Navigation ──
+function goChat(catId) {
+  state.activeCatId = catId;
+  state.activeTagFilter = null;
+  state.selectedTagId = null;
+  save();
+  document.getElementById('screen-home').classList.add('slide-left');
+  document.getElementById('screen-chat').classList.remove('hidden');
+  renderChat();
+}
+
+function goHome() {
+  document.getElementById('screen-home').classList.remove('slide-left');
+  document.getElementById('screen-chat').classList.add('hidden');
+  renderHome();
+}
+
+// ── Render Home ──
+function renderHome() {
+  const list = document.getElementById('category-list');
+  const empty = document.getElementById('home-empty');
+  if (state.categories.length === 0) {
+    list.innerHTML = '';
+    list.style.display = 'none';
+    empty.style.display = 'flex';
+    return;
+  }
+  list.style.display = 'block';
+  empty.style.display = 'none';
+  list.innerHTML = state.categories.map(cat => {
+    const catNotes = state.notes.filter(n => n.catId === cat.id);
+    const count = catNotes.length;
+    const last = catNotes.sort((a,b)=>b.ts-a.ts)[0];
+    const preview = last ? escHtml(last.text.slice(0,30)) : '还没有记录';
+    return `
+      <div class="category-item" onclick="goChat('${cat.id}')" oncontextmenu="catLongPress(event,'${cat.id}')">
+        <div class="cat-emoji">${cat.emoji}</div>
+        <div class="cat-info">
+          <div class="cat-name">${escHtml(cat.name)}</div>
+          <div class="cat-preview">${preview}</div>
+        </div>
+        <div class="cat-meta">
+          <span class="cat-count ${count===0?'zero':''}">${count}</span>
+          <span class="cat-arrow">›</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Render Chat ──
+function renderChat() {
+  const cat = state.categories.find(c => c.id === state.activeCatId);
+  if (!cat) return;
+  const catTags = state.tags.filter(t => t.catId === state.activeCatId);
+  let notes = state.notes.filter(n => n.catId === state.activeCatId);
+  if (state.activeTagFilter) notes = notes.filter(n => n.tagId === state.activeTagFilter);
+  notes.sort((a,b) => a.ts - b.ts);
+
+  // Header
+  document.getElementById('chat-cat-title').textContent = cat.emoji + ' ' + cat.name;
+  document.getElementById('chat-cat-sub').textContent = state.notes.filter(n=>n.catId===cat.id).length + ' 条记录';
+
+  // Filter chips
+  const filterEl = document.getElementById('filter-scroll');
+  filterEl.innerHTML = `<button class="filter-chip all ${!state.activeTagFilter?'active':''}" onclick="setFilter(null)">全部</button>` +
+    catTags.map(t => `<button class="filter-chip ${state.activeTagFilter===t.id?'active':''}"
+      style="${state.activeTagFilter===t.id?'':'background:'+t.bg+';color:'+t.text}"
+      onclick="setFilter('${t.id}')">${t.name}</button>`).join('');
+
+  // Messages
+  const msgsEl = document.getElementById('messages');
+  const emptyEl = document.getElementById('chat-empty');
+
+  if (notes.length === 0) {
+    msgsEl.style.display = 'none';
+    emptyEl.style.display = 'flex';
+    document.getElementById('chat-empty-emoji').textContent = cat.emoji;
+    document.getElementById('chat-empty-title').textContent = state.activeTagFilter ? '这个标签下还没有记录' : '还没有记录';
+    document.getElementById('chat-empty-sub').textContent = state.activeTagFilter ? '发一条或者切换标签' : '发条消息给「'+cat.name+'」吧';
+  } else {
+    msgsEl.style.display = 'flex';
+    emptyEl.style.display = 'none';
+    let html = '', lastDate = '';
+    notes.forEach(note => {
+      const dateStr = fmtDate(note.ts);
+      if (dateStr !== lastDate) {
+        html += `<div class="date-divider">${dateStr}</div>`;
+        lastDate = dateStr;
+      }
+      const tag = catTags.find(t => t.id === note.tagId);
+      html += `
+        <div class="msg-row" id="msg-${note.id}" data-id="${note.id}">
+          <div class="msg-wrap">
+            <div class="bubble">${escHtml(note.text)}</div>
+            <div class="msg-meta">
+              ${tag ? `<span class="msg-tag" style="background:${tag.bg};color:${tag.text}">${tag.name}</span>` : ''}
+              <span class="msg-time">${fmtTime(note.ts)}</span>
+            </div>
+          </div>
+        </div>`;
+    });
+    msgsEl.innerHTML = html;
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+
+    // Long press on messages
+    msgsEl.querySelectorAll('.msg-row').forEach(row => {
+      let timer;
+      row.addEventListener('touchstart', e => {
+        timer = setTimeout(() => msgLongPress(e, row.dataset.id), 500);
+      }, {passive:true});
+      row.addEventListener('touchend', () => clearTimeout(timer));
+      row.addEventListener('touchmove', () => clearTimeout(timer));
+    });
+  }
+
+  // Tag bar
+  renderTagBar();
+}
+
+function renderTagBar() {
+  const catTags = state.tags.filter(t => t.catId === state.activeCatId);
+  const bar = document.getElementById('tag-bar');
+  bar.innerHTML = `<span id="tag-bar-label">标签：</span>` +
+    catTags.map(t => `<button class="tag-chip ${state.selectedTagId===t.id?'selected':''}"
+      style="background:${t.bg};color:${t.text}"
+      onclick="toggleSelTag('${t.id}')">${t.name}</button>`).join('') +
+    `<button class="tag-add" onclick="openNewTagSheet()">＋ 新建</button>`;
+}
+
+// ── Actions ──
+function setFilter(tagId) {
+  state.activeTagFilter = tagId;
+  renderChat();
+}
+
+function toggleSelTag(id) {
+  state.selectedTagId = state.selectedTagId === id ? null : id;
+  renderTagBar();
+}
+
+function sendNote() {
+  const ta = document.getElementById('note-input');
+  const text = ta.value.trim();
+  if (!text) return;
+  state.notes.push({ id:uid(), catId:state.activeCatId, tagId:state.selectedTagId, text, ts:Date.now() });
+  save();
+  ta.value = '';
+  ta.style.height = 'auto';
+  renderChat();
+  document.getElementById('chat-cat-sub').textContent = state.notes.filter(n=>n.catId===state.activeCatId).length + ' 条记录';
+}
+
+function deleteNote(id) {
+  state.notes = state.notes.filter(n => n.id !== id);
+  save();
+  renderChat();
+  renderHome();
+}
+
+function deleteCategory(id) {
+  state.categories = state.categories.filter(c => c.id !== id);
+  state.notes = state.notes.filter(n => n.catId !== id);
+  state.tags = state.tags.filter(t => t.catId !== id);
+  save();
+  goHome();
+}
+
+// ── Long press msg ──
+function msgLongPress(e, msgId) {
+  showCtxMenu(e.touches[0].clientX, e.touches[0].clientY, [
+    { label: '🗑 删除这条', cls: 'danger', action: () => deleteNote(msgId) }
+  ]);
+}
+
+// ── Cat long press / more menu ──
+function catLongPress(e, catId) {
+  e.preventDefault();
+  showCtxMenu(e.clientX, e.clientY, [
+    { label: '🗑 删除类别', cls: 'danger', action: () => { if(confirm('删除此类别及所有记录？')) deleteCategory(catId); } }
+  ]);
+}
+
+function openCatMenu() {
+  const btn = document.getElementById('chat-more-btn');
+  const rect = btn.getBoundingClientRect();
+  showCtxMenu(rect.right - 150, rect.bottom + 4, [
+    { label: '🏷 管理标签', action: () => openNewTagSheet() },
+    { label: '🗑 删除类别', cls: 'danger', action: () => { if(confirm('删除此类别及所有记录？')) deleteCategory(state.activeCatId); } }
+  ]);
+}
+
+// ── Context menu ──
+function showCtxMenu(x, y, items) {
+  const menu = document.getElementById('ctx-menu');
+  menu.innerHTML = items.map(it =>
+    `<div class="ctx-item ${it.cls||''}" onclick="handleCtx(${items.indexOf(it)})">${it.label}</div>`
+  ).join('');
+  menu._items = items;
+  const mw = 160, mh = items.length * 48;
+  menu.style.left = Math.min(x, window.innerWidth - mw - 8) + 'px';
+  menu.style.top = Math.min(y, window.innerHeight - mh - 8) + 'px';
+  menu.style.display = 'block';
+  document.getElementById('ctx-overlay').style.display = 'block';
+}
+
+function handleCtx(i) {
+  const items = document.getElementById('ctx-menu')._items;
+  closeCtx();
+  if (items[i]) items[i].action();
+}
+
+function closeCtx() {
+  document.getElementById('ctx-menu').style.display = 'none';
+  document.getElementById('ctx-overlay').style.display = 'none';
+}
+
+// ── Sheets ──
+function openNewCatSheet() {
+  state.selEmoji = EMOJIS[0];
+  const grid = document.getElementById('emoji-grid');
+  grid.innerHTML = EMOJIS.map(e =>
+    `<div class="emoji-opt ${e===state.selEmoji?'sel':''}" onclick="pickEmoji('${e}',this)">${e}</div>`
+  ).join('');
+  document.getElementById('cat-name-input').value = '';
+  openSheet('sheet-cat');
+  setTimeout(() => document.getElementById('cat-name-input').focus(), 300);
+}
+
+function pickEmoji(e, el) {
+  state.selEmoji = e;
+  document.querySelectorAll('#emoji-grid .emoji-opt').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function createCategory() {
+  const name = document.getElementById('cat-name-input').value.trim();
+  if (!name) { document.getElementById('cat-name-input').focus(); return; }
+  const cat = { id:uid(), emoji:state.selEmoji, name };
+  state.categories.push(cat);
+  save();
+  closeSheet('sheet-cat');
+  goChat(cat.id);
+}
+
+function openNewTagSheet() {
+  state.selColor = 0;
+  const grid = document.getElementById('color-grid');
+  grid.innerHTML = PALETTE.map((p,i) =>
+    `<div class="color-opt ${i===0?'sel':''}" style="background:${p.bg}" onclick="pickColor(${i},this)">
+      <span style="color:${p.text};font-weight:700">A</span>
+    </div>`
+  ).join('');
+  document.getElementById('tag-name-input').value = '';
+  openSheet('sheet-tag');
+  setTimeout(() => document.getElementById('tag-name-input').focus(), 300);
+}
+
+function pickColor(i, el) {
+  state.selColor = i;
+  document.querySelectorAll('#color-grid .color-opt').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function createTag() {
+  const name = document.getElementById('tag-name-input').value.trim();
+  if (!name) { document.getElementById('tag-name-input').focus(); return; }
+  const p = PALETTE[state.selColor];
+  state.tags.push({ id:uid(), catId:state.activeCatId, name, bg:p.bg, text:p.text });
+  save();
+  closeSheet('sheet-tag');
+  renderChat();
+}
+
+function openSheet(id) { document.getElementById(id).classList.add('open'); }
+function closeSheet(id, e) {
+  if (e && e.target !== document.getElementById(id)) return;
+  document.getElementById(id).classList.remove('open');
+}
+
+// ── Textarea auto-resize ──
+document.getElementById('note-input').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 110) + 'px';
+});
+
+// ── Android back button support via history ──
+window.addEventListener('popstate', () => {
+  if (!document.getElementById('screen-chat').classList.contains('hidden')) {
+    goHome();
+    history.pushState(null, '', '');
+  }
+});
+history.pushState(null, '', '');
+
+// ── Init ──
+load();
+renderHome();
+</script>
+</body>
+</html>
