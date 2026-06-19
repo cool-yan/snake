@@ -213,8 +213,8 @@
   .shake { animation: screenShake 0.15s infinite; }
   @keyframes screenShake {
     0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(-3px, 2px); }
-    75% { transform: translate(3px, -2px); }
+    25% { transform: translate(-4px, 3px); }
+    75% { transform: translate(4px, -3px); }
   }
 </style>
 </head>
@@ -353,12 +353,12 @@
   let shakeTime = 0; 
 
   // ==========================================
-  // ⚡ 核心新变量：时间流速控制状态机
+  // 时流控制状态机与变色特效控制
   // ==========================================
-  let timeDilation = 1.0;       // 当前全局时间流速缩放 (1.0 代表正常，0 代表完全静止)
-  let freezeFramesLeft = 0;     // 硬直停顿剩余帧数
-  let slowRecoverFramesLeft = 0;// 平滑加速恢复剩余帧数
-  const SLOW_DURATION = 45;     // 减速到重新回满所需的帧数 (约 0.7 秒)
+  let timeDilation = 1.0;       
+  let freezeFramesLeft = 0;     // 硬直停顿剩余帧
+  let slowRecoverFramesLeft = 0;// 平滑恢复剩余帧
+  const SLOW_DURATION = 40;     // 恢复周期
 
   function updateAudioSettings() {
     let targetVol = isMuted ? 0 : volume;
@@ -515,27 +515,60 @@
     });
   }
 
+  // ==========================================
+  // 🎮 增强变色渲染：3D 玩家磁盘绘制
+  // ==========================================
   function draw3DPlayer(ctx, p) {
     ctx.save();
     const thickness = p.thickness;
+
+    // 检查目前是否处于爆炸损伤反应期
+    let isDamaged = freezeFramesLeft > 0 || slowRecoverFramesLeft > 25;
+    // 如果受击，计算红白高频交替闪烁的色彩
+    let isFlashFrame = Math.floor(Date.now() / 60) % 2 === 0;
+
     for(let i = thickness; i > 0; i--) {
       ctx.beginPath();
       let shade = 25 + (thickness - i) * 3;
-      ctx.fillStyle = `rgb(${shade}, ${shade + 15}, ${shade + 35})`;
+      
+      if (isDamaged) {
+        // 💥 变色效果一：盘身厚度变为暗红色或亮红能量逆流色
+        ctx.fillStyle = isFlashFrame ? `rgb(${shade + 110}, 15, 15)` : `rgb(${shade + 40}, 10, 10)`;
+      } else {
+        // 正常科技蓝
+        ctx.fillStyle = `rgb(${shade}, ${shade + 15}, ${shade + 35})`;
+      }
+
       ctx.ellipse(p.x, p.y + i, p.width, p.height, 0, 0, Math.PI * 2);
       ctx.fill();
       if (i === thickness) {
-        ctx.strokeStyle = 'rgba(79,179,255,0.4)';
+        ctx.strokeStyle = isDamaged ? 'rgba(255, 65, 54, 0.6)' : 'rgba(79,179,255,0.4)';
         ctx.lineWidth = 1.5;
         ctx.stroke();
       }
     }
 
     let topGrad = ctx.createRadialGradient(p.x, p.y - 5, 2, p.x, p.y, p.width);
-    topGrad.addColorStop(0, '#ffffff'); 
-    topGrad.addColorStop(0.1, '#66cbff');
-    topGrad.addColorStop(0.4, '#1b3a4b');
-    topGrad.addColorStop(1, '#0e1d26');
+    if (isDamaged) {
+      // 💥 变色效果二：盘面主发光核心转化为警报红/纯白交替闪烁
+      if (isFlashFrame) {
+        topGrad.addColorStop(0, '#ffffff');
+        topGrad.addColorStop(0.2, '#ff8a82');
+        topGrad.addColorStop(0.6, '#9e140b');
+        topGrad.addColorStop(1, '#300200');
+      } else {
+        topGrad.addColorStop(0, '#ff4136');
+        topGrad.addColorStop(0.3, '#bc1a10');
+        topGrad.addColorStop(0.8, '#4a0400');
+        topGrad.addColorStop(1, '#110000');
+      }
+    } else {
+      // 正常的经典蓝色发光渐变
+      topGrad.addColorStop(0, '#ffffff'); 
+      topGrad.addColorStop(0.1, '#66cbff');
+      topGrad.addColorStop(0.4, '#1b3a4b');
+      topGrad.addColorStop(1, '#0e1d26');
+    }
     
     ctx.beginPath();
     ctx.fillStyle = topGrad;
@@ -543,7 +576,7 @@
     ctx.fill();
 
     ctx.beginPath();
-    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.strokeStyle = isDamaged ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.25)';
     ctx.lineWidth = 2;
     ctx.ellipse(p.x, p.y, p.width * 0.7, p.height * 0.7, 0, 0, Math.PI * 2);
     ctx.stroke();
@@ -554,7 +587,6 @@
     ctx.save();
     ctx.translate(item.x, item.y);
     
-    // 旋转速度受时间流速 timeDilation 控制
     item.rotY += 0.04 * timeDilation;
     item.rotX += 0.02 * timeDilation;
 
@@ -646,7 +678,6 @@
     }
   }
 
-  // 核心物理与缓动循环
   function update(time) {
     if (gameState !== 'RUNNING') return;
 
@@ -658,22 +689,21 @@
     }
 
     // ==========================================
-    // ⏳ 核心计算：平滑时间减速/加速状态机
+    // ⌛ 时间调节器状态演算
     // ==========================================
     if (freezeFramesLeft > 0) {
-      // 1. 硬直停顿阶段：把时间流速锁死到极低值 (近乎静止)
-      timeDilation = 0.05; 
+      // 1. 硬直卡肉停顿阶段：把流速降到绝对极低值
+      timeDilation = 0.02; 
       freezeFramesLeft--;
       if (freezeFramesLeft === 0) {
-        slowRecoverFramesLeft = SLOW_DURATION; // 准备进入平滑加速恢复阶段
+        slowRecoverFramesLeft = SLOW_DURATION; 
       }
     } else if (slowRecoverFramesLeft > 0) {
-      // 2. 平滑恢复阶段：从 0.3 慢慢插值增加到 1.0
+      // 2. 停顿解除后的平滑缓动恢复阶段
       slowRecoverFramesLeft--;
       let progress = (SLOW_DURATION - slowRecoverFramesLeft) / SLOW_DURATION;
-      timeDilation = 0.3 + (0.7 * progress); // 渐进恢复
+      timeDilation = 0.3 + (0.7 * progress); 
     } else {
-      // 正常状态
       timeDilation = 1.0;
     }
 
@@ -683,7 +713,6 @@
     if (player.targetX < minX) player.targetX = minX;
     if (player.targetX > maxX) player.targetX = maxX;
 
-    // 玩家控制的跟随平滑度，也受到时间流速的影响 (减速时盘子也会显得略有一点沉重感)
     let followSpeed = 0.32 * (0.4 + 0.6 * timeDilation);
     player.x += (player.targetX - player.x) * followSpeed;
     
@@ -691,7 +720,6 @@
     if (player.x > maxX) player.x = maxX;
 
     globalSpeedFactor = 1.0 + (score / 150);
-    // 生成物间隔根据时间流速顺延，防止在减速期间刷出一大堆怪
     spawnInterval = Math.max(500, 1000 - (score * 1.5));
 
     if (time - lastSpawnTime > spawnInterval * (1 / timeDilation)) {
@@ -701,7 +729,6 @@
 
     for (let i = items.length - 1; i >= 0; i--) {
       let it = items[i];
-      // ❗ 关键：物品下落速度乘上当前时间流速
       it.y += it.speed * timeDilation;
 
       let dx = it.x - player.x;
@@ -717,12 +744,12 @@
         } else if (it.type === 'bomb') {
           hp--;
           playSFX('bomb'); 
-          shakeTime = 14; 
+          shakeTime = 16; 
           terminalNode.classList.add('shake');
           document.getElementById('statusDot').className = 'status-dot danger';
           
-          // 💥 触发时滞效果：停顿 2 帧，之后花 45 帧平滑加回原速
-          freezeFramesLeft = 2; 
+          // ✨ 调整：将强烈的定格硬直时间提高到 8 帧，增强麻痹卡顿感
+          freezeFramesLeft = 8; 
 
           setTimeout(() => {
             if(gameState === 'RUNNING') document.getElementById('statusDot').className = 'status-dot';
@@ -748,7 +775,7 @@
 
     ctx.clearRect(0, 0, rect.width, rect.height);
     items.forEach(it => draw3DItem(ctx, it));
-    draw3DPlayer(ctx, player);
+    draw3DPlayer(ctx, player); // 传入进行变色判定和刷新
     drawHUD(rect);
 
     requestAnimationFrame(update);
