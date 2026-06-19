@@ -270,7 +270,6 @@
 
 <script>
 (function(){
-  // 音频源预留
   const BGM_URL        = "bgm.mp3";          
   const COIN_SFX_URL   = "coin.mp3";         
   const HEALTH_SFX_URL = "health.mp3";       
@@ -325,8 +324,7 @@
 
   let currentLang = 'zh';
 
-  // 控制参数
-  let maxControlAngle = 45; // 达到边缘所需的手机最大倾斜度(度数)
+  let maxControlAngle = 45; 
   let volume = 0.7;       
   let isMuted = false;
 
@@ -345,7 +343,7 @@
     width: 85,    
     height: 18,   
     thickness: 12, 
-    targetX: 0    // 核心更改：完全由精确目标位置驱动，过滤速度不稳带来的抖动
+    targetX: 0    
   };
 
   let items = [];
@@ -353,6 +351,14 @@
   let spawnInterval = 1000; 
   let globalSpeedFactor = 1.0; 
   let shakeTime = 0; 
+
+  // ==========================================
+  // ⚡ 核心新变量：时间流速控制状态机
+  // ==========================================
+  let timeDilation = 1.0;       // 当前全局时间流速缩放 (1.0 代表正常，0 代表完全静止)
+  let freezeFramesLeft = 0;     // 硬直停顿剩余帧数
+  let slowRecoverFramesLeft = 0;// 平滑加速恢复剩余帧数
+  const SLOW_DURATION = 45;     // 减速到重新回满所需的帧数 (约 0.7 秒)
 
   function updateAudioSettings() {
     let targetVol = isMuted ? 0 : volume;
@@ -383,7 +389,6 @@
   }
   window.addEventListener('resize', resizeCanvas);
 
-  // 灵敏度滑块控制角度
   const sensSlider = document.getElementById('sensSlider');
   const sensVal = document.getElementById('sensVal');
   sensSlider.oninput = function() {
@@ -440,7 +445,6 @@
     }
   }
 
-  // 输入控制
   canvas.addEventListener('mousemove', (e) => {
     if (gameState !== 'RUNNING') return;
     const rect = canvas.getBoundingClientRect();
@@ -467,17 +471,13 @@
         const centerX = rect.width / 2;
         const maxRange = centerX - minX;
 
-        // 【重构核心：绝对倾斜角度比例映射】
-        // 限制倾斜角数据不超过 90 度防止符号反转跳变
         if(tilt > 90) tilt = 90;
         if(tilt < -90) tilt = -90;
 
-        // 计算当前倾斜角度占设定的最大控制角度的比例 (-1.0 到 1.0)
         let ratio = tilt / maxControlAngle;
         if (ratio > 1) ratio = 1;
         if (ratio < -1) ratio = -1;
 
-        // 根据比例计算绝对的目标位置 (彻底解决飘忽和不对位的感觉)
         player.targetX = centerX + ratio * maxRange;
       }
     }, true);
@@ -515,7 +515,6 @@
     });
   }
 
-  // 3D Canvas 渲染
   function draw3DPlayer(ctx, p) {
     ctx.save();
     const thickness = p.thickness;
@@ -554,8 +553,10 @@
   function draw3DItem(ctx, item) {
     ctx.save();
     ctx.translate(item.x, item.y);
-    item.rotY += 0.04;
-    item.rotX += 0.02;
+    
+    // 旋转速度受时间流速 timeDilation 控制
+    item.rotY += 0.04 * timeDilation;
+    item.rotX += 0.02 * timeDilation;
 
     if (item.type === 'coin') {
       ctx.scale(Math.cos(item.rotY), 1); 
@@ -656,31 +657,52 @@
       if (shakeTime === 0) terminalNode.classList.remove('shake');
     }
 
+    // ==========================================
+    // ⏳ 核心计算：平滑时间减速/加速状态机
+    // ==========================================
+    if (freezeFramesLeft > 0) {
+      // 1. 硬直停顿阶段：把时间流速锁死到极低值 (近乎静止)
+      timeDilation = 0.05; 
+      freezeFramesLeft--;
+      if (freezeFramesLeft === 0) {
+        slowRecoverFramesLeft = SLOW_DURATION; // 准备进入平滑加速恢复阶段
+      }
+    } else if (slowRecoverFramesLeft > 0) {
+      // 2. 平滑恢复阶段：从 0.3 慢慢插值增加到 1.0
+      slowRecoverFramesLeft--;
+      let progress = (SLOW_DURATION - slowRecoverFramesLeft) / SLOW_DURATION;
+      timeDilation = 0.3 + (0.7 * progress); // 渐进恢复
+    } else {
+      // 正常状态
+      timeDilation = 1.0;
+    }
+
     const minX = player.width * 0.5;
     const maxX = rect.width - player.width * 0.5;
 
-    // 【安全阻尼截断算法】：在碰撞前锁死目标值
     if (player.targetX < minX) player.targetX = minX;
     if (player.targetX > maxX) player.targetX = maxX;
 
-    // 采用经典缓动插值逼近目标坐标（实现极其跟手且平滑的随动）
-    player.x += (player.targetX - player.x) * 0.32;
+    // 玩家控制的跟随平滑度，也受到时间流速的影响 (减速时盘子也会显得略有一点沉重感)
+    let followSpeed = 0.32 * (0.4 + 0.6 * timeDilation);
+    player.x += (player.targetX - player.x) * followSpeed;
     
-    // 二次硬核越界拦截，杜绝任何微小像素级的越界反弹和抖动
     if (player.x < minX) player.x = minX;
     if (player.x > maxX) player.x = maxX;
 
     globalSpeedFactor = 1.0 + (score / 150);
+    // 生成物间隔根据时间流速顺延，防止在减速期间刷出一大堆怪
     spawnInterval = Math.max(500, 1000 - (score * 1.5));
 
-    if (time - lastSpawnTime > spawnInterval) {
+    if (time - lastSpawnTime > spawnInterval * (1 / timeDilation)) {
       spawnItem();
       lastSpawnTime = time;
     }
 
     for (let i = items.length - 1; i >= 0; i--) {
       let it = items[i];
-      it.y += it.speed;
+      // ❗ 关键：物品下落速度乘上当前时间流速
+      it.y += it.speed * timeDilation;
 
       let dx = it.x - player.x;
       let dy = it.y - player.y;
@@ -695,9 +717,13 @@
         } else if (it.type === 'bomb') {
           hp--;
           playSFX('bomb'); 
-          shakeTime = 10; 
+          shakeTime = 14; 
           terminalNode.classList.add('shake');
           document.getElementById('statusDot').className = 'status-dot danger';
+          
+          // 💥 触发时滞效果：停顿 2 帧，之后花 45 帧平滑加回原速
+          freezeFramesLeft = 2; 
+
           setTimeout(() => {
             if(gameState === 'RUNNING') document.getElementById('statusDot').className = 'status-dot';
           }, 300);
@@ -762,6 +788,9 @@
     score = 0;
     hp = maxHp;
     items = [];
+    timeDilation = 1.0;
+    freezeFramesLeft = 0;
+    slowRecoverFramesLeft = 0;
     gameState = 'RUNNING';
     document.getElementById('statusDot').className = 'status-dot';
     document.getElementById('menuOverlay').classList.add('hidden');
