@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>数字炸弹 · 拆弹终端</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>💣</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0c08;
+    --panel:#14160f;
+    --panel2:#1a1d13;
+    --border:#2b2f1f;
+    --text:#e9e7da;
+    --muted:#7d8169;
+    --red:#ff4136;
+    --red-dim:#5a201a;
+    --green:#39d353;
+    --amber:#ffb300;
+    --blue:#4fb3ff;
+    --font-display:'Space Grotesk', 'Inter', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background-color:var(--bg);
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--text);
+    font-family:var(--font-body);
+    display:flex;
+    justify-content:center;
+    padding:32px 14px 60px;
+  }
+
+  .terminal{
+    width:100%;
+    max-width:440px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:22px 20px 26px;
+    box-shadow:0 0 60px rgba(255,65,54,.07), 0 20px 50px rgba(0,0,0,.5);
+  }
+
+  header{ display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+
+  .status-dot{
+    width:10px; height:10px; border-radius:50%;
+    background:var(--red);
+    box-shadow:0 0 8px var(--red);
+    animation:blink 1.4s ease-in-out infinite;
+    flex-shrink:0;
+  }
+  .status-dot.safe{ background:var(--green); box-shadow:0 0 8px var(--green); animation:none; }
+  .status-dot.exploded{ background:var(--red); box-shadow:0 0 14px var(--red); animation:none; }
+
+  @media (prefers-reduced-motion: reduce){ .status-dot{ animation:none; } }
+  @keyframes blink{ 50%{ opacity:.25; } }
+
+  h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:26px;
+    letter-spacing:-.01em;
+    margin:0;
+    text-shadow:0 0 18px rgba(255,65,54,.35);
+  }
+
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:2px 0 18px 0;
+  }
+
+  .section-label{
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:.04em;
+    color:var(--muted);
+    text-transform:uppercase;
+    margin-bottom:8px;
+  }
+
+  .config-block{ margin-bottom:18px; }
+
+  .stepper{ display:flex; align-items:center; gap:14px; }
+  .stepper button{
+    width:38px; height:38px; border-radius:8px;
+    border:1px solid var(--border); background:var(--panel2);
+    color:var(--text); font-size:18px; cursor:pointer;
+    font-family:var(--font-mono);
+  }
+  .stepper button:hover{ border-color:var(--blue); color:var(--blue); }
+  .stepper .value{
+    font-family:var(--font-mono); font-size:22px; font-weight:700;
+    min-width:34px; text-align:center;
+  }
+  .stepper .hint{ font-size:12px; color:var(--muted); margin-left:auto; }
+
+  .pill-group{ display:flex; gap:8px; flex-wrap:wrap; }
+  .pill{
+    flex:1; min-width:120px;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    background:var(--panel2);
+    color:var(--muted);
+    border-radius:8px;
+    font-size:13px;
+    font-family:var(--font-body);
+    cursor:pointer;
+    text-align:center;
+    transition:border-color .15s, color .15s;
+  }
+  .pill.active{ border-color:var(--blue); color:var(--text); box-shadow:0 0 0 1px var(--blue) inset; }
+
+  .limit-input{ margin-top:10px; display:none; align-items:center; gap:10px; }
+  .limit-input.show{ display:flex; }
+  .limit-input input{
+    width:70px; padding:8px 10px; border-radius:8px;
+    border:1px solid var(--border); background:var(--panel2);
+    color:var(--text); font-family:var(--font-mono); font-size:14px;
+  }
+  .limit-input span{ font-size:12px; color:var(--muted); }
+
+  .error-msg{ font-size:12px; color:var(--red); margin-top:6px; min-height:14px; }
+
+  .btn-primary{
+    width:100%; padding:14px; border:none; border-radius:10px;
+    background:var(--red); color:#1a0a08; font-weight:700; font-size:15px;
+    letter-spacing:.02em; cursor:pointer; font-family:var(--font-display);
+    box-shadow:0 6px 20px rgba(255,65,54,.25);
+  }
+  .btn-primary:hover{ background:#ff5b4f; }
+  .btn-primary:disabled{ opacity:.4; cursor:not-allowed; box-shadow:none; }
+
+  .btn-confirm{
+    flex:1; padding:13px; border:none; border-radius:10px;
+    background:var(--green); color:#06210d; font-weight:700; font-size:14px;
+    cursor:pointer; font-family:var(--font-display);
+  }
+  .btn-confirm:disabled{ opacity:.35; cursor:not-allowed; }
+
+  .btn-ghost{
+    padding:13px 16px; border-radius:10px; border:1px solid var(--border);
+    background:transparent; color:var(--muted); font-size:14px; cursor:pointer;
+    font-family:var(--font-body);
+  }
+  .btn-ghost:hover{ border-color:var(--muted); color:var(--text); }
+
+  .status-chips{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .chip{
+    font-family:var(--font-mono); font-size:11px; color:var(--muted);
+    border:1px solid var(--border); border-radius:6px; padding:5px 9px;
+  }
+
+  .slots{ display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .slot{
+    width:42px; height:54px;
+    background:var(--panel2);
+    border:2px solid var(--border);
+    border-radius:8px;
+    color:var(--text);
+    font-family:var(--font-mono);
+    font-size:24px; font-weight:700;
+    text-align:center;
+    outline:none;
+  }
+  .slot:focus{ border-color:var(--red); box-shadow:0 0 0 3px rgba(255,65,54,.18); }
+
+  .action-row{ display:flex; gap:10px; margin-bottom:18px; }
+
+  .log{
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px;
+    max-height:230px;
+    overflow-y:auto;
+    font-family:var(--font-mono);
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .log:empty::before{
+    content:"› 等待第一次输入 …";
+    color:var(--muted); font-size:12px;
+  }
+  .log-entry{ font-size:12px; line-height:1.5; }
+  .log-head{ color:var(--muted); }
+  .log-head b{ color:var(--blue); }
+  .log-chips{ display:inline-flex; gap:4px; margin:4px 0; }
+  .log-chip{
+    width:18px; height:22px; border:1px solid var(--border);
+    border-radius:4px; display:inline-flex; align-items:center; justify-content:center;
+    font-size:11px; color:var(--text);
+  }
+  .log-chip.hit{ border-color:var(--green); color:var(--green); }
+  .log-result{ color:var(--text); }
+  .log-result .a{ color:var(--green); font-weight:700; }
+  .log-result .b{ color:var(--amber); font-weight:700; }
+
+  .banner{
+    display:none;
+    border-radius:10px;
+    padding:16px;
+    margin-bottom:16px;
+    text-align:center;
+  }
+  .banner.show{ display:block; }
+  .banner.win{ background:rgba(57,211,83,.08); border:1px solid var(--green); }
+  .banner.lose{ background:rgba(255,65,54,.08); border:1px solid var(--red); animation:shake .4s; }
+  @media (prefers-reduced-motion: reduce){ .banner.lose{ animation:none; } }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+  .banner h2{ margin:0 0 6px; font-family:var(--font-display); font-size:20px; }
+  .banner.win h2{ color:var(--green); }
+  .banner.lose h2{ color:var(--red); }
+  .banner p{ margin:0; font-size:13px; color:var(--text); font-family:var(--font-mono); }
+
+  .hidden{ display:none; }
+</style>
+</head>
+<body>
+
+<div class="terminal">
+  <header>
+    <div class="status-dot" id="statusDot"></div>
+    <h1>数字炸弹</h1>
+  </header>
+  <div class="eyebrow">终端 // 拆弹协议 · 输入正确密码以解除</div>
+
+  <!-- 配置面板 -->
+  <div id="configPanel">
+
+    <div class="config-block">
+      <div class="section-label">密码位数</div>
+      <div class="stepper">
+        <button id="decBtn" type="button">−</button>
+        <div class="value" id="digitCountValue">4</div>
+        <button id="incBtn" type="button">+</button>
+        <span class="hint">3 ~ 10 位</span>
+      </div>
+    </div>
+
+    <div class="config-block">
+      <div class="section-label">数字是否可重复</div>
+      <div class="pill-group" id="repeatGroup">
+        <div class="pill active" data-value="false">不可重复</div>
+        <div class="pill" data-value="true">可以重复</div>
+      </div>
+    </div>
+
+    <div class="config-block">
+      <div class="section-label">提示方式</div>
+      <div class="pill-group" id="hintGroup">
+        <div class="pill active" data-value="false">仅显示完全正确个数</div>
+        <div class="pill" data-value="true">同时显示数字对位置错个数</div>
+      </div>
+    </div>
+
+    <div class="config-block">
+      <div class="section-label">猜测次数</div>
+      <div class="pill-group" id="limitGroup">
+        <div class="pill active" data-value="false">不限次数</div>
+        <div class="pill" data-value="true">限制次数</div>
+      </div>
+      <div class="limit-input" id="limitInputWrap">
+        <input type="number" id="limitCount" min="1" value="8">
+        <span>次以内猜中，否则引爆</span>
+      </div>
+    </div>
+
+    <div class="error-msg" id="configError"></div>
+
+    <button class="btn-primary" id="startBtn">▶ 开始拆弹</button>
+  </div>
+
+  <!-- 游戏面板 -->
+  <div id="gamePanel" class="hidden">
+
+    <div class="status-chips" id="statusChips"></div>
+
+    <div class="banner" id="banner">
+      <h2 id="bannerTitle"></h2>
+      <p id="bannerText"></p>
+    </div>
+
+    <div class="slots" id="slots"></div>
+
+    <div class="action-row">
+      <button class="btn-confirm" id="confirmBtn" disabled>确认</button>
+      <button class="btn-ghost" id="resetBtn">重新设置</button>
+    </div>
+
+    <div class="log" id="log"></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  // ---------- 状态 ----------
+  let digitCount = 4;
+  let allowRepeat = false;
+  let showB = false;
+  let limited = false;
+  let limit = 8;
+
+  let secret = [];
+  let attempts = 0;
+  let over = false;
+
+  // ---------- 配置面板交互 ----------
+  const digitCountValue = document.getElementById('digitCountValue');
+  document.getElementById('decBtn').onclick = () => { if(digitCount>3){ digitCount--; digitCountValue.textContent = digitCount; } };
+  document.getElementById('incBtn').onclick = () => { if(digitCount<10){ digitCount++; digitCountValue.textContent = digitCount; } };
+
+  function setupPillGroup(id, onChange){
+    const group = document.getElementById(id);
+    const pills = group.querySelectorAll('.pill');
+    pills.forEach(p => p.addEventListener('click', () => {
+      pills.forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      onChange(p.dataset.value === 'true');
+    }));
+  }
+
+  setupPillGroup('repeatGroup', v => { allowRepeat = v; });
+  setupPillGroup('hintGroup', v => { showB = v; });
+  setupPillGroup('limitGroup', v => {
+    limited = v;
+    document.getElementById('limitInputWrap').classList.toggle('show', v);
+  });
+
+  document.getElementById('limitCount').addEventListener('input', e => {
+    limit = Math.max(1, parseInt(e.target.value || '1', 10));
+  });
+
+  // ---------- 开始游戏 ----------
+  document.getElementById('startBtn').onclick = startGame;
+
+  function startGame(){
+    const errEl = document.getElementById('configError');
+    errEl.textContent = '';
+    if (!allowRepeat && digitCount > 10){
+      errEl.textContent = '不可重复时，位数最多为 10（0~9 共10个数字）。';
+      return;
+    }
+    secret = generateSecret(digitCount, allowRepeat);
+    attempts = 0;
+    over = false;
+
+    document.getElementById('configPanel').classList.add('hidden');
+    document.getElementById('gamePanel').classList.remove('hidden');
+    document.getElementById('log').innerHTML = '';
+    setBanner(null);
+    setStatusDot('armed');
+    renderStatusChips();
+    buildSlots(digitCount);
+    document.getElementById('confirmBtn').disabled = true;
+    document.getElementById('confirmBtn').onclick = submitGuess;
+  }
+
+  document.getElementById('resetBtn').onclick = () => {
+    document.getElementById('gamePanel').classList.add('hidden');
+    document.getElementById('configPanel').classList.remove('hidden');
+  };
+
+  // ---------- 生成密码 ----------
+  function generateSecret(n, repeat){
+    if (repeat){
+      return Array.from({length:n}, () => String(Math.floor(Math.random()*10)));
+    }
+    const pool = ['0','1','2','3','4','5','6','7','8','9'];
+    for (let i=pool.length-1; i>0; i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    return pool.slice(0, n);
+  }
+
+  // ---------- 状态徽标 ----------
+  function renderStatusChips(){
+    const wrap = document.getElementById('statusChips');
+    const usedText = limited ? `${attempts}/${limit} 次` : `已用 ${attempts} 次`;
+    wrap.innerHTML = `
+      <div class="chip">位数 ${digitCount}</div>
+      <div class="chip">${allowRepeat ? '可重复' : '不重复'}</div>
+      <div class="chip">${showB ? 'A/B 提示' : '仅完全正确'}</div>
+      <div class="chip">${usedText}</div>
+    `;
+  }
+
+  function setStatusDot(state){
+    const dot = document.getElementById('statusDot');
+    dot.className = 'status-dot' + (state === 'safe' ? ' safe' : state === 'exploded' ? ' exploded' : '');
+  }
+
+  function setBanner(state, title, text){
+    const banner = document.getElementById('banner');
+    const titleEl = document.getElementById('bannerTitle');
+    const textEl = document.getElementById('bannerText');
+    if (!state){
+      banner.className = 'banner';
+      return;
+    }
+    banner.className = 'banner show ' + state;
+    titleEl.textContent = title;
+    textEl.textContent = text;
+  }
+
+  // ---------- 输入框 ----------
+  function buildSlots(n){
+    const wrap = document.getElementById('slots');
+    wrap.innerHTML = '';
+    const slots = [];
+    for (let i=0; i<n; i++){
+      const input = document.createElement('input');
+      input.className = 'slot';
+      input.type = 'text';
+      input.inputMode = 'numeric';
+      input.autocomplete = 'off';
+      wrap.appendChild(input);
+      slots.push(input);
+    }
+    slots.forEach((slot, idx) => {
+      slot.addEventListener('input', () => {
+        let val = slot.value.replace(/[^0-9]/g, '');
+        if (val.length > 1){
+          for (let k=0; k<val.length && (idx+k)<slots.length; k++){
+            slots[idx+k].value = val[k];
+          }
+          slots[Math.min(idx+val.length, slots.length-1)].focus();
+        } else {
+          slot.value = val;
+          if (val && idx < slots.length-1) slots[idx+1].focus();
+        }
+        updateConfirmState(slots);
+      });
+      slot.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !slot.value && idx > 0){
+          slots[idx-1].focus();
+        }
+        if (e.key === 'Enter'){
+          document.getElementById('confirmBtn').click();
+        }
+      });
+    });
+    if (slots[0]) slots[0].focus();
+    window._slots = slots;
+  }
+
+  function updateConfirmState(slots){
+    const filled = slots.every(s => s.value.length === 1);
+    document.getElementById('confirmBtn').disabled = !filled || over;
+  }
+
+  // ---------- 反馈计算 ----------
+  function computeFeedback(secretArr, guessArr){
+    const n = secretArr.length;
+    let A = 0;
+    const secretCount = {};
+    const guessCount = {};
+    const hitMask = [];
+    for (let i=0; i<n; i++){
+      const hit = secretArr[i] === guessArr[i];
+      hitMask.push(hit);
+      if (hit) A++;
+      secretCount[secretArr[i]] = (secretCount[secretArr[i]] || 0) + 1;
+      guessCount[guessArr[i]] = (guessCount[guessArr[i]] || 0) + 1;
+    }
+    let total = 0;
+    for (const d in secretCount){
+      if (guessCount[d]) total += Math.min(secretCount[d], guessCount[d]);
+    }
+    const B = total - A;
+    return { A, B, hitMask };
+  }
+
+  // ---------- 提交猜测 ----------
+  function submitGuess(){
+    if (over) return;
+    const slots = window._slots;
+    const guess = slots.map(s => s.value);
+    if (guess.some(v => v.length !== 1)) return;
+
+    attempts++;
+    const { A, B, hitMask } = computeFeedback(secret, guess);
+    addLogEntry(attempts, guess, hitMask, A, B);
+    renderStatusChips();
+
+    if (A === digitCount){
+      endGame(true, guess);
+      return;
+    }
+    if (limited && attempts >= limit){
+      endGame(false, guess);
+      return;
+    }
+
+    slots.forEach(s => s.value = '');
+    slots[0].focus();
+    document.getElementById('confirmBtn').disabled = true;
+  }
+
+  function addLogEntry(n, guess, hitMask, A, B){
+    const log = document.getElementById('log');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    const chips = guess.map((d, i) =>
+      `<span class="log-chip${hitMask[i] ? ' hit' : ''}">${d}</span>`
+    ).join('');
+    const resultText = showB
+      ? `<span class="a">完全正确 ${A}</span> 位 · <span class="b">数字对位置错 ${B}</span> 个`
+      : `<span class="a">完全正确 ${A}</span> 位`;
+    entry.innerHTML = `
+      <div class="log-head">› 第 <b>${String(n).padStart(2,'0')}</b> 次尝试</div>
+      <div class="log-chips">${chips}</div>
+      <div class="log-result">${resultText}</div>
+    `;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  // ---------- 结束游戏 ----------
+  function endGame(win, lastGuess){
+    over = true;
+    document.getElementById('confirmBtn').disabled = true;
+    if (win){
+      setStatusDot('safe');
+      setBanner('win', '✅ 拆弹成功', `用了 ${attempts} 次尝试解除了密码：${secret.join(' ')}`);
+    } else {
+      setStatusDot('exploded');
+      setBanner('lose', '💥 已爆炸', `次数用尽，密码原本是：${secret.join(' ')}`);
+    }
+  }
+
+})();
+</script>
+</body>
+</html>
