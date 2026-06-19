@@ -75,7 +75,6 @@
     text-shadow:0 0 15px rgba(79,179,255,.3);
   }
 
-  /* 顶层小齿轮暂停按钮 */
   .btn-pause-toggle {
     position: absolute;
     right: 0; top: 0;
@@ -109,7 +108,6 @@
     height: 100%;
   }
 
-  /* 覆盖UI层面板 */
   .overlay {
     position: absolute;
     top:0; left:0; width:100%; height:100%;
@@ -141,7 +139,6 @@
     max-width: 300px;
   }
 
-  /* 控制组件表单区 */
   .settings-block {
     width: 100%;
     max-width: 280px;
@@ -153,9 +150,7 @@
     text-align: left;
   }
   
-  .setting-row {
-    margin-bottom: 12px;
-  }
+  .setting-row { margin-bottom: 12px; }
   .setting-row:last-child { margin-bottom: 0; }
 
   .setting-label {
@@ -169,11 +164,7 @@
   }
   .setting-label span.val { color: var(--blue); font-weight: bold; }
 
-  .slider-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+  .slider-container { display: flex; align-items: center; gap: 8px; }
 
   input[type="range"] {
     flex: 1;
@@ -200,9 +191,7 @@
     font-family: var(--font-body);
     min-width: 54px; text-align: center;
   }
-  .btn-mute.active {
-    background: var(--red); color: #0a0c08; border-color: var(--red);
-  }
+  .btn-mute.active { background: var(--red); color: #0a0c08; border-color: var(--red); }
 
   .btn-primary{
     padding:12px 32px; border:none; border-radius:8px;
@@ -216,12 +205,8 @@
 
   .pill-group{ display:inline-flex; gap:6px; background: var(--panel2); padding: 4px; border-radius: 8px; border: 1px solid var(--border); }
   .pill{
-    padding:5px 12px;
-    color:var(--muted);
-    border-radius:6px;
-    font-size:11px;
-    font-family:var(--font-mono);
-    cursor:pointer;
+    padding:5px 12px; color:var(--muted); border-radius:6px;
+    font-size:11px; font-family:var(--font-mono); cursor:pointer;
   }
   .pill.active{ background: var(--panel); color:var(--text); border: 1px solid var(--border); }
 
@@ -253,11 +238,11 @@
       <div class="settings-block">
         <div class="setting-row">
           <div class="setting-label">
-            <span id="cfgLabelSens">陀螺仪灵敏度</span>
-            <span class="val" id="sensVal">1.5x</span>
+            <span id="cfgLabelSens">最大控制角度</span>
+            <span class="val" id="sensVal">45°</span>
           </div>
           <div class="slider-container">
-            <input type="range" id="sensSlider" min="0.5" max="3.5" step="0.1" value="1.5">
+            <input type="range" id="sensSlider" min="15" max="90" step="5" value="45">
           </div>
         </div>
 
@@ -285,26 +270,20 @@
 
 <script>
 (function(){
-  // ==========================================
-  // 🎵 1. 自定义音频源配置地址 (后期你可以在这里修改URL)
-  // ==========================================
-  const BGM_URL        = "bgm.mp3";          // 背景音乐
-  const COIN_SFX_URL   = "coin.mp3";         // 吃到金币
-  const HEALTH_SFX_URL = "health.mp3";       // 吃到血包
-  const BOMB_SFX_URL   = "bomb.mp3";         // 吃到炸弹
+  // 音频源预留
+  const BGM_URL        = "bgm.mp3";          
+  const COIN_SFX_URL   = "coin.mp3";         
+  const HEALTH_SFX_URL = "health.mp3";       
+  const BOMB_SFX_URL   = "bomb.mp3";         
 
-  // 创建音频实例对象
   const audioContext = {
     bgm: new Audio(BGM_URL),
     coin: new Audio(COIN_SFX_URL),
     health: new Audio(HEALTH_SFX_URL),
     bomb: new Audio(BOMB_SFX_URL)
   };
-  
-  // 配置BGM循环播放
   audioContext.bgm.loop = true;
 
-  // ---------- 多语言配置 ----------
   const i18n = {
     zh: {
       pageTitle: "重力磁盘 · 陀螺仪终端",
@@ -320,7 +299,7 @@
       pauseTitle: "⏸ 拦截挂起",
       pauseDesc: "终端驱动暂停中。可在下方调整硬件参数。",
       uiScore: "积分 SCORE:",
-      cfgSens: "陀螺仪灵敏度",
+      cfgSens: "最大控制角度",
       cfgVol: "主音量",
       btnMute: "静音"
     },
@@ -338,7 +317,7 @@
       pauseTitle: "⏸ SYSTEM PAUSED",
       pauseDesc: "Defusal suspension active. Re-calibrate hardware metrics below.",
       uiScore: "SCORE:",
-      cfgSens: "Gyro Sensitivity",
+      cfgSens: "Max Control Angle",
       cfgVol: "Master Volume",
       btnMute: "Mute"
     }
@@ -346,8 +325,8 @@
 
   let currentLang = 'zh';
 
-  // ---------- 核心控制与音频参数 ----------
-  let sensitivity = 1.5; 
+  // 控制参数
+  let maxControlAngle = 45; // 达到边缘所需的手机最大倾斜度(度数)
   let volume = 0.7;       
   let isMuted = false;
 
@@ -355,20 +334,18 @@
   const ctx = canvas.getContext('2d');
   const terminalNode = document.getElementById('terminalNode');
 
-  let gameState = 'START'; // START, RUNNING, PAUSED, GAMEOVER
+  let gameState = 'START'; 
   let score = 0;
   let hp = 3;
   const maxHp = 3;
 
-  // 玩家模型 (引入平滑阻尼算法相关的速度变量)
   const player = {
     x: 0,
     y: 0,
     width: 85,    
     height: 18,   
     thickness: 12, 
-    vx: 0,         // X轴当前真实运动速度
-    targetX: 0
+    targetX: 0    // 核心更改：完全由精确目标位置驱动，过滤速度不稳带来的抖动
   };
 
   let items = [];
@@ -377,12 +354,8 @@
   let globalSpeedFactor = 1.0; 
   let shakeTime = 0; 
 
-  // ==========================================
-  // 🔊 音频触发辅助方法
-  // ==========================================
   function updateAudioSettings() {
     let targetVol = isMuted ? 0 : volume;
-    // 改变主BGM和音效音量
     audioContext.bgm.volume = targetVol;
     audioContext.coin.volume = targetVol;
     audioContext.health.volume = targetVol;
@@ -392,12 +365,10 @@
   function playSFX(type) {
     const sfx = audioContext[type];
     if (!sfx) return;
-    // 强行重置进度以允许高频连续触发重叠播放
     sfx.currentTime = 0; 
-    sfx.play().catch(()=>{/* 拦截部分浏览器未交互前禁止播放的警告 */});
+    sfx.play().catch(()=>{});
   }
 
-  // ---------- 初始化与适配 ----------
   function resizeCanvas() {
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width * window.devicePixelRatio;
@@ -407,16 +378,17 @@
     player.y = rect.height - 45;
     if (gameState === 'START') {
       player.x = rect.width / 2;
+      player.targetX = rect.width / 2;
     }
   }
   window.addEventListener('resize', resizeCanvas);
 
-  // ---------- 设置滑块联动交互 ----------
+  // 灵敏度滑块控制角度
   const sensSlider = document.getElementById('sensSlider');
   const sensVal = document.getElementById('sensVal');
   sensSlider.oninput = function() {
-    sensitivity = parseFloat(this.value);
-    sensVal.textContent = sensitivity.toFixed(1) + 'x';
+    maxControlAngle = parseInt(this.value, 10);
+    sensVal.textContent = maxControlAngle + '°';
   };
 
   const volSlider = document.getElementById('volSlider');
@@ -434,7 +406,6 @@
     updateAudioSettings();
   };
 
-  // ---------- 语言切换 ----------
   function setupLanguage() {
     const pills = document.querySelectorAll('#langGroup .pill');
     pills.forEach(p => p.addEventListener('click', () => {
@@ -469,7 +440,7 @@
     }
   }
 
-  // ---------- 驱动控制器 (鼠标/触控/陀螺仪) ----------
+  // 输入控制
   canvas.addEventListener('mousemove', (e) => {
     if (gameState !== 'RUNNING') return;
     const rect = canvas.getBoundingClientRect();
@@ -488,27 +459,40 @@
   if (window.DeviceOrientationEvent) {
     window.addEventListener('deviceorientation', (e) => {
       if (gameState !== 'RUNNING') return;
-      let tilt = e.gamma; // 左右倾斜角
+      let tilt = e.gamma; 
       if (tilt !== null && tilt !== undefined) {
-        // 【重构灵敏度算法】：通过倾斜角度直接叠加目标加速度，乘以调校后的灵敏度滑动条权重
-        let baseForce = tilt * 0.28 * sensitivity; 
-        player.vx += baseForce;
+        const rect = canvas.getBoundingClientRect();
+        const minX = player.width * 0.5;
+        const maxX = rect.width - player.width * 0.5;
+        const centerX = rect.width / 2;
+        const maxRange = centerX - minX;
+
+        // 【重构核心：绝对倾斜角度比例映射】
+        // 限制倾斜角数据不超过 90 度防止符号反转跳变
+        if(tilt > 90) tilt = 90;
+        if(tilt < -90) tilt = -90;
+
+        // 计算当前倾斜角度占设定的最大控制角度的比例 (-1.0 到 1.0)
+        let ratio = tilt / maxControlAngle;
+        if (ratio > 1) ratio = 1;
+        if (ratio < -1) ratio = -1;
+
+        // 根据比例计算绝对的目标位置 (彻底解决飘忽和不对位的感觉)
+        player.targetX = centerX + ratio * maxRange;
       }
     }, true);
   }
 
-  // 悬浮小齿轮控制暂停
   const pauseToggleBtn = document.getElementById('pauseToggleBtn');
   pauseToggleBtn.onclick = function() {
     if (gameState === 'RUNNING') {
       gameState = 'PAUSED';
-      audioContext.bgm.pause(); // 暂停BGM
+      audioContext.bgm.pause(); 
       document.getElementById('menuOverlay').classList.remove('hidden');
       updateText();
     }
   };
 
-  // ---------- 掉落物孵化 ----------
   function spawnItem() {
     const rect = canvas.getBoundingClientRect();
     const x = Math.random() * (rect.width - 40) + 20;
@@ -531,7 +515,7 @@
     });
   }
 
-  // ---------- 3D 无图渲染 Canvas Core ----------
+  // 3D Canvas 渲染
   function draw3DPlayer(ctx, p) {
     ctx.save();
     const thickness = p.thickness;
@@ -661,7 +645,7 @@
     }
   }
 
-  // ---------- 核心主物理循环演算 ----------
+  // 核心物理与缓动循环
   function update(time) {
     if (gameState !== 'RUNNING') return;
 
@@ -672,19 +656,19 @@
       if (shakeTime === 0) terminalNode.classList.remove('shake');
     }
 
-    // 【重构物理平滑阻尼算法】：处理玩家盘子位移
-    // 增加空气摩擦阻尼力 (使陀螺仪控制能及时停住，不会持续漂移)
-    player.vx *= 0.84; 
-    player.x += player.vx;
+    const minX = player.width * 0.5;
+    const maxX = rect.width - player.width * 0.5;
 
-    // 混合计算触屏和鼠标的绝对坐标追踪
-    if (player.targetX !== player.x) {
-      player.x += (player.targetX - player.x) * 0.22;
-    }
+    // 【安全阻尼截断算法】：在碰撞前锁死目标值
+    if (player.targetX < minX) player.targetX = minX;
+    if (player.targetX > maxX) player.targetX = maxX;
+
+    // 采用经典缓动插值逼近目标坐标（实现极其跟手且平滑的随动）
+    player.x += (player.targetX - player.x) * 0.32;
     
-    // 撞墙拦截
-    if (player.x < player.width * 0.5) { player.x = player.width * 0.5; player.vx = 0; }
-    if (player.x > rect.width - player.width * 0.5) { player.x = rect.width - player.width * 0.5; player.vx = 0; }
+    // 二次硬核越界拦截，杜绝任何微小像素级的越界反弹和抖动
+    if (player.x < minX) player.x = minX;
+    if (player.x > maxX) player.x = maxX;
 
     globalSpeedFactor = 1.0 + (score / 150);
     spawnInterval = Math.max(500, 1000 - (score * 1.5));
@@ -707,10 +691,10 @@
       if (distanceCheck <= 1.1 || inThickness) {
         if (it.type === 'coin') {
           score += 10;
-          playSFX('coin'); // 触发金币声
+          playSFX('coin'); 
         } else if (it.type === 'bomb') {
           hp--;
-          playSFX('bomb'); // 触发炸弹声
+          playSFX('bomb'); 
           shakeTime = 10; 
           terminalNode.classList.add('shake');
           document.getElementById('statusDot').className = 'status-dot danger';
@@ -724,7 +708,7 @@
         } else if (it.type === 'heart') {
           if (hp < maxHp) {
             hp++;
-            playSFX('health'); // 触发加血声
+            playSFX('health'); 
           }
         }
         items.splice(i, 1);
@@ -744,10 +728,9 @@
     requestAnimationFrame(update);
   }
 
-  // ---------- 游戏流调度 ----------
   function triggerGameOver() {
     gameState = 'GAMEOVER';
-    audioContext.bgm.pause(); // 游戏结束暂停播放BGM
+    audioContext.bgm.pause(); 
     document.getElementById('pauseToggleBtn').style.display = 'none';
     document.getElementById('statusDot').className = 'status-dot danger';
     document.getElementById('menuOverlay').classList.remove('hidden');
@@ -767,27 +750,23 @@
   };
 
   function initGameStartOrResume() {
-    // 如果之前是暂停挂起状态，点击则直接恢复游玩
     if (gameState === 'PAUSED') {
       gameState = 'RUNNING';
       document.getElementById('menuOverlay').classList.add('hidden');
-      audioContext.bgm.play().catch(()=>{}); // 继续BGM
+      audioContext.bgm.play().catch(()=>{}); 
       lastSpawnTime = performance.now();
       requestAnimationFrame(update);
       return;
     }
 
-    // 全新开始新一轮游戏
     score = 0;
     hp = maxHp;
     items = [];
     gameState = 'RUNNING';
-    player.vx = 0;
     document.getElementById('statusDot').className = 'status-dot';
     document.getElementById('menuOverlay').classList.add('hidden');
-    document.getElementById('pauseToggleBtn').style.display = 'block'; // 呼出右上角设置
+    document.getElementById('pauseToggleBtn').style.display = 'block'; 
     
-    // 初始化音量音效设置，并启动背景音乐
     updateAudioSettings();
     audioContext.bgm.currentTime = 0;
     audioContext.bgm.play().catch(()=>{});
@@ -803,7 +782,7 @@
   resizeCanvas();
   setupLanguage();
   updateText();
-  updateAudioSettings(); // 初始化基础音量参数
+  updateAudioSettings(); 
   update(0);
 
 })();
