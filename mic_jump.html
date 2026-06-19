@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title id="pageTitle">声波矩阵 · 麦克风音频终端</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🎙️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0c08;
+    --panel:#14160f;
+    --panel2:#1a1d13;
+    --border:#2b2f1f;
+    --text:#e9e7da;
+    --muted:#7d8169;
+    --red:#ff4136;
+    --green:#39d353;
+    --blue:#4fb3ff;
+    --font-display:'Space Grotesk', 'Inter', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  body{
+    min-height:100vh;
+    background-color:var(--bg);
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--text);
+    font-family:var(--font-body);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:10px;
+    overflow: hidden;
+  }
+
+  .terminal{
+    width:100%;
+    max-width:440px;
+    height: 92vh;
+    max-height: 800px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:16px;
+    box-shadow:0 0 60px rgba(57,211,83,.05), 0 20px 50px rgba(0,0,0,.6);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  header{ display:flex; align-items:center; gap:10px; margin-bottom:2px; position: relative;}
+
+  .status-dot{
+    width:10px; height:10px; border-radius:50%;
+    background:var(--green);
+    box-shadow:0 0 8px var(--green);
+  }
+  .status-dot.danger{ background:var(--red); box-shadow:0 0 12px var(--red); animation:blink 0.5s infinite; }
+  @keyframes blink{ 50%{ opacity:0.3; } }
+
+  h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:-.01em;
+    text-shadow:0 0 15px rgba(57,211,83,.3);
+  }
+
+  .btn-pause-toggle {
+    position: absolute;
+    right: 0; top: 0;
+    background: none; border: none;
+    color: var(--muted); font-size: 20px;
+    cursor: pointer; display: none;
+  }
+  .btn-pause-toggle:hover { color: var(--text); }
+
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:10px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:12px;
+  }
+
+  .canvas-container {
+    flex: 1;
+    position: relative;
+    background: #0d0f0a;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .overlay {
+    position: absolute;
+    top:0; left:0; width:100%; height:100%;
+    background: rgba(10,12,8,0.94);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    text-align: center;
+    z-index: 10;
+    overflow-y: auto;
+  }
+
+  .overlay.hidden { display: none; }
+
+  .menu-title {
+    font-family:var(--font-display);
+    font-size: 24px;
+    color: var(--green);
+    margin-bottom: 6px;
+  }
+
+  .menu-desc {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    line-height: 1.5;
+    max-width: 310px;
+  }
+
+  .settings-block {
+    width: 100%;
+    max-width: 280px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+    text-align: left;
+  }
+  
+  .setting-row { margin-bottom: 12px; }
+  .setting-row:last-child { margin-bottom: 0; }
+
+  .setting-label {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .setting-label span.val { color: var(--green); font-weight: bold; }
+
+  .slider-container { display: flex; align-items: center; gap: 8px; }
+
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    background: var(--panel);
+    height: 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%; background: var(--green);
+    cursor: pointer;
+  }
+
+  .btn-primary{
+    padding:12px 32px; border:none; border-radius:8px;
+    background:var(--green); color:#0a0c08; font-weight:700; font-size:14px;
+    letter-spacing:.02em; cursor:pointer; font-family:var(--font-display);
+    box-shadow:0 4px 15px rgba(57,211,83,.3);
+    margin-bottom: 14px;
+    transition: transform 0.1s;
+  }
+  .btn-primary:active{ transform: scale(0.96); }
+
+  .pill-group{ display:inline-flex; gap:6px; background: var(--panel2); padding: 4px; border-radius: 8px; border: 1px solid var(--border); }
+  .pill{
+    padding:5px 12px; color:var(--muted); border-radius:6px;
+    font-size:11px; font-family:var(--font-mono); cursor:pointer;
+  }
+  .pill.active{ background: var(--panel); color:var(--text); border: 1px solid var(--border); }
+
+  .shake { animation: screenShake 0.15s infinite; }
+  @keyframes screenShake {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(-4px, 3px); }
+    75% { transform: translate(4px, -3px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="terminal" id="terminalNode">
+  <header>
+    <div class="status-dot" id="statusDot"></div>
+    <h1 id="mainTitle">声波矩阵</h1>
+    <button class="btn-pause-toggle" id="pauseToggleBtn">⚙️</button>
+  </header>
+  <div class="eyebrow" id="subtitle">协议 // 音频声络驱动 · 分贝捕获终端</div>
+
+  <div class="canvas-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="overlay" id="menuOverlay">
+      <h2 class="menu-title" id="menuTitle">音频对齐准备</h2>
+      <p class="menu-desc" id="menuDesc">本游戏需要麦克风授权。用声音大小控制磁盘浮空高度（发声越高，不发声下落），躲避横向飞来的炸弹！</p>
+      
+      <div class="settings-block">
+        <div class="setting-row">
+          <div class="setting-label">
+            <span id="cfgLabelSens">声音灵敏度</span>
+            <span class="val" id="sensVal">65</span>
+          </div>
+          <div class="slider-container">
+            <input type="range" id="sensSlider" min="20" max="95" step="5" value="65">
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="actionBtn">激活接收器</button>
+      
+      <div class="pill-group" id="langGroup">
+        <div class="pill active" data-value="zh">简体中文</div>
+        <div class="pill" data-value="en">English</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const i18n = {
+    zh: {
+      pageTitle: "声波矩阵 · 麦克风音频终端",
+      mainTitle: "声波矩阵",
+      subtitle: "协议 // 音频声络驱动 · 分贝捕获终端",
+      startTitle: "音频对齐准备",
+      startDesc: "需要麦克风输入！发声（发出“啊”或吹气）控制3D矩阵盘垂直升高，不发声则受重力下降。拦截金币，闪避横向炸弹！",
+      btnStart: "▶ 激活接收器",
+      btnRestart: "🔄 重新初始化驱动",
+      btnResume: "▶ 恢复音频流",
+      overTitle: "💥 驱动熔断",
+      overDesc: "结构血量归零。最终声频同步完整度分数: {score}",
+      pauseTitle: "⏸ 接收挂起",
+      pauseDesc: "声学采样暂停。可在下方调整硬件灵敏度参数。",
+      uiScore: "积分 SCORE:",
+      cfgSens: "声音灵敏度"
+    },
+    en: {
+      pageTitle: "Sonic Matrix · Microphone Terminal",
+      mainTitle: "Sonic Matrix",
+      subtitle: "PROTOCOL // AUDIO INFRASTRUCTURE · DECIBEL CAPTURE",
+      startTitle: "AUDIO CALIBRATION",
+      startDesc: "Microphone permission required! Make sound (say 'Ah' or blow) to lift the 3D disk vertically, remain silent to descend. Catch coins, dodge incoming bombs!",
+      btnStart: "▶ Activate Receiver",
+      btnRestart: "🔄 Re-initialize Driver",
+      btnResume: "▶ Resume Audio Stream",
+      overTitle: "💥 DRIVER OVERFLOW",
+      overDesc: "Structural health reached zero. Final decibel synchronization score: {score}",
+      pauseTitle: "⏸ SAMPLING PAUSED",
+      pauseDesc: "Acoustic feed suspended. Re-calibrate microphone metrics below.",
+      uiScore: "SCORE:",
+      cfgSens: "Mic Sensitivity"
+    }
+  };
+
+  let currentLang = 'zh';
+  let micSensitivity = 65; 
+
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const terminalNode = document.getElementById('terminalNode');
+
+  let gameState = 'START'; 
+  let score = 0;
+  let hp = 3;
+  const maxHp = 3;
+
+  // Web Audio 核心变量
+  let audioCtx = null;
+  let analyser = null;
+  let microphone = null;
+  let dataArray = new Uint8Array(0);
+  let currentVolume = 0; // 实时检测到的平滑音量归一值 (0-1)
+
+  // 玩家状态（横向固定在1/4处，通过声音控制Y轴高度）
+  const player = {
+    x: 90,
+    y: 200,
+    targetY: 200,
+    width: 60,
+    height: 14,
+    thickness: 10,
+    vy: 0,
+    gravity: 0.35,
+    liftForce: 1.1
+  };
+
+  let items = [];
+  let lastSpawnTime = 0;
+  let spawnInterval = 1200;
+  let globalSpeedFactor = 1.0;
+  let shakeTime = 0;
+
+  // 受击卡肉效果控制
+  let timeDilation = 1.0;
+  let freezeFramesLeft = 0;
+  let slowRecoverFramesLeft = 0;
+  const SLOW_DURATION = 35;
+
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * window.devicePixelRatio;
+    canvas.height = rect.height * window.devicePixelRatio;
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    if(gameState === 'START') {
+      player.y = rect.height / 2;
+    }
+  }
+  window.addEventListener('resize', resizeCanvas);
+
+  const sensSlider = document.getElementById('sensSlider');
+  const sensVal = document.getElementById('sensVal');
+  sensSlider.oninput = function() {
+    micSensitivity = parseInt(this.value, 10);
+    sensVal.textContent = micSensitivity;
+  };
+
+  function setupLanguage() {
+    const pills = document.querySelectorAll('#langGroup .pill');
+    pills.forEach(p => p.addEventListener('click', () => {
+      pills.forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      currentLang = p.dataset.value;
+      updateText();
+    }));
+  }
+
+  function updateText() {
+    const lang = i18n[currentLang];
+    document.getElementById('pageTitle').textContent = lang.pageTitle;
+    document.getElementById('mainTitle').textContent = lang.mainTitle;
+    document.getElementById('subtitle').textContent = lang.subtitle;
+    document.getElementById('cfgLabelSens').textContent = lang.cfgSens;
+    
+    if (gameState === 'START') {
+      document.getElementById('menuTitle').textContent = lang.startTitle;
+      document.getElementById('menuDesc').textContent = lang.startDesc;
+      document.getElementById('actionBtn').textContent = lang.btnStart;
+    } else if (gameState === 'GAMEOVER') {
+      document.getElementById('menuTitle').textContent = lang.overTitle;
+      document.getElementById('menuDesc').textContent = lang.overDesc.replace('{score}', score);
+      document.getElementById('actionBtn').textContent = lang.btnRestart;
+    } else if (gameState === 'PAUSED') {
+      document.getElementById('menuTitle').textContent = lang.pauseTitle;
+      document.getElementById('menuDesc').textContent = lang.pauseDesc;
+      document.getElementById('actionBtn').textContent = lang.btnResume;
+    }
+  }
+
+  const pauseToggleBtn = document.getElementById('pauseToggleBtn');
+  pauseToggleBtn.onclick = function() {
+    if (gameState === 'RUNNING') {
+      gameState = 'PAUSED';
+      if(audioCtx) audioCtx.suspend();
+      document.getElementById('menuOverlay').classList.remove('hidden');
+      updateText();
+    }
+  };
+
+  // 初始化麦克风录音
+  async function initAudioFeed() {
+    if (audioCtx) return true;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 64; // 较小的抽样率，快速响应音量大小
+      microphone = audioCtx.createMediaStreamSource(stream);
+      microphone.connect(analyser);
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+      return true;
+    } catch (err) {
+      alert("无法访问麦克风驱动，请检查浏览器权限设置！");
+      return false;
+    }
+  }
+
+  // 采集声音响度并转化为物理推力
+  function analyzeVolume() {
+    if (!analyser) return;
+    analyser.getByteFrequencyData(dataArray);
+    let sum = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+      sum += dataArray[i];
+    }
+    let average = sum / dataArray.length; // 0 ~ 255 的分贝平均值
+    
+    // 映射敏感度阈值
+    let cutoff = (100 - micSensitivity) * 0.5; // 计算过滤下限
+    let rawVol = Math.max(0, average - cutoff) / (200 - cutoff);
+    if(rawVol > 1) rawVol = 1;
+
+    // 平滑过滤
+    currentVolume += (rawVol - currentVolume) * 0.4;
+  }
+
+  function spawnItem() {
+    const rect = canvas.getBoundingClientRect();
+    const x = rect.width + 40; // 从屏幕右侧飞出
+    const y = Math.random() * (rect.height - 120) + 60; // 随机垂直轨道
+    const speed = (Math.random() * 1.5 + 2.5) * globalSpeedFactor; // 横向移动速度
+    
+    const rand = Math.random();
+    let type = 'coin';
+    if (rand > 0.65 && rand <= 0.90) {
+      type = 'bomb';
+    } else if (rand > 0.90) {
+      type = 'heart';
+    }
+
+    items.push({
+      x, y, type, speed,
+      rotX: Math.random() * Math.PI, 
+      rotY: Math.random() * Math.PI,
+      size: type === 'heart' ? 12 : 10
+    });
+  }
+
+  function draw3DPlayer(ctx, p) {
+    ctx.save();
+    const thickness = p.thickness;
+    let isDamaged = freezeFramesLeft > 0 || slowRecoverFramesLeft > 22;
+    let isFlashFrame = Math.floor(Date.now() / 60) % 2 === 0;
+
+    for(let i = thickness; i > 0; i--) {
+      ctx.beginPath();
+      let shade = 25 + (thickness - i) * 3;
+      if (isDamaged) {
+        ctx.fillStyle = isFlashFrame ? `rgb(${shade + 120}, 15, 15)` : `rgb(${shade + 40}, 10, 10)`;
+      } else {
+        ctx.fillStyle = `rgb(${shade}, ${shade + 35}, ${shade + 15})`; // 绿色调
+      }
+      ctx.ellipse(p.x, p.y + i, p.width, p.height, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    let topGrad = ctx.createRadialGradient(p.x, p.y - 4, 2, p.x, p.y, p.width);
+    if (isDamaged) {
+      topGrad.addColorStop(0, isFlashFrame ? '#ffffff' : '#ff4136');
+      topGrad.addColorStop(0.4, '#9e140b');
+      topGrad.addColorStop(1, '#110000');
+    } else {
+      topGrad.addColorStop(0, '#ffffff'); 
+      topGrad.addColorStop(0.15, '#6eff8a');
+      topGrad.addColorStop(0.5, '#164b23');
+      topGrad.addColorStop(1, '#08210e');
+    }
+    
+    ctx.beginPath();
+    ctx.fillStyle = topGrad;
+    ctx.ellipse(p.x, p.y, p.width, p.height, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function draw3DItem(ctx, item) {
+    ctx.save();
+    ctx.translate(item.x, item.y);
+    item.rotY += 0.04 * timeDilation;
+
+    if (item.type === 'coin') {
+      ctx.scale(Math.cos(item.rotY), 1);
+      let coinGrad = ctx.createRadialGradient(-2, -2, 1, 0, 0, item.size);
+      coinGrad.addColorStop(0, '#fff3a1');
+      coinGrad.addColorStop(0.6, '#ffb300');
+      coinGrad.addColorStop(1, '#b58100');
+      ctx.beginPath(); ctx.fillStyle = coinGrad;
+      ctx.arc(0, 0, item.size, 0, Math.PI * 2); ctx.fill();
+    } else if (item.type === 'bomb') {
+      let bombGrad = ctx.createRadialGradient(-3, -3, 2, 0, 0, item.size);
+      bombGrad.addColorStop(0, '#ff7d75'); bombGrad.addColorStop(0.5, '#ff4136'); bombGrad.addColorStop(1, '#140201');
+      ctx.beginPath(); ctx.fillStyle = bombGrad;
+      ctx.arc(0, 0, item.size, 0, Math.PI * 2); ctx.fill();
+    } else if (item.type === 'heart') {
+      ctx.rotate(item.rotY * 0.5);
+      ctx.fillStyle = '#39d353'; ctx.fillRect(-item.size, -item.size, item.size*2, item.size*2);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(-item.size+4, -1, item.size*2-8, 2); ctx.fillRect(-1, -item.size+4, 2, item.size*2-8);
+    }
+    ctx.restore();
+  }
+
+  // 绘制底部的实时分贝频率柱
+  function drawAudioVisualizer(rect) {
+    if(!analyser || gameState !== 'RUNNING') return;
+    const barWidth = rect.width / dataArray.length;
+    ctx.save();
+    ctx.globalAlpha = 0.15;
+    for (let i = 0; i < dataArray.length; i++) {
+      let val = dataArray[i]; // 0-255
+      let percent = val / 255;
+      let height = rect.height * 0.25 * percent;
+      ctx.fillStyle = '#39d353';
+      ctx.fillRect(i * barWidth, rect.height - height, barWidth - 2, height);
+    }
+    ctx.restore();
+  }
+
+  function drawHUD(rect) {
+    const lang = i18n[currentLang];
+    ctx.fillStyle = '#7d8169';
+    ctx.font = `700 11px var(--font-mono)`;
+    ctx.fillText(lang.uiScore, 16, 26);
+    ctx.fillStyle = '#e9e7da';
+    ctx.font = `700 24px var(--font-display)`;
+    ctx.fillText(score, 16, 52);
+
+    const startX = rect.width - 95;
+    for (let i = 0; i < maxHp; i++) {
+      ctx.fillStyle = (i < hp) ? '#39d353' : '#22251a';
+      ctx.beginPath();
+      ctx.moveTo(startX + i * 26, 20); ctx.lineTo(startX + i * 26 + 20, 20);
+      ctx.lineTo(startX + i * 26 + 15, 34); ctx.lineTo(startX + i * 26 - 5, 34);
+      ctx.closePath(); ctx.fill();
+    }
+  }
+
+  function update(time) {
+    if (gameState !== 'RUNNING') return;
+    const rect = canvas.getBoundingClientRect();
+
+    if (shakeTime > 0) {
+      shakeTime--;
+      if (shakeTime === 0) terminalNode.classList.remove('shake');
+    }
+
+    // 时间流速状态演算
+    if (freezeFramesLeft > 0) {
+      timeDilation = 0.02; freezeFramesLeft--;
+      if (freezeFramesLeft === 0) slowRecoverFramesLeft = SLOW_DURATION;
+    } else if (slowRecoverFramesLeft > 0) {
+      slowRecoverFramesLeft--;
+      let progress = (SLOW_DURATION - slowRecoverFramesLeft) / SLOW_DURATION;
+      timeDilation = 0.3 + (0.7 * progress);
+    } else {
+      timeDilation = 1.0;
+    }
+
+    // ==========================================
+    // 🎙️ 声控物理计算
+    // ==========================================
+    analyzeVolume(); // 提取实时麦克风音量推力
+
+    if (currentVolume > 0.05) {
+      // 声音越响，向上的浮空反冲速度 vy 增加越多
+      player.vy -= currentVolume * player.liftForce * timeDilation;
+    }
+    // 持续受到重力影响下坠
+    player.vy += player.gravity * timeDilation;
+    
+    // 限制最大飞行/下坠速度
+    if(player.vy > 6) player.vy = 6;
+    if(player.vy < -7) player.vy = -7;
+
+    player.y += player.vy;
+
+    // 屏幕上下边缘弹性软阻断
+    const minY = 40;
+    const maxY = rect.height - 50;
+    if (player.y < minY) { player.y = minY; player.vy = 0; }
+    if (player.y > maxY) { player.y = maxY; player.vy = 0; }
+
+    globalSpeedFactor = 1.0 + (score / 180);
+    spawnInterval = Math.max(600, 1200 - (score * 1.2));
+
+    if (time - lastSpawnTime > spawnInterval * (1 / timeDilation)) {
+      spawnItem();
+      lastSpawnTime = time;
+    }
+
+    // 物品横向飞入运算
+    for (let i = items.length - 1; i >= 0; i--) {
+      let it = items[i];
+      it.x -= it.speed * timeDilation; // 横向推进
+
+      let dx = it.x - player.x;
+      let dy = it.y - player.y;
+      
+      // 圆形包围盒粗略测算
+      let hitCheck = (dx * dx) / (player.width * player.width) + (dy * dy) / (player.height * player.height);
+
+      if (hitCheck <= 1.2) {
+        if (it.type === 'coin') {
+          score += 10;
+        } else if (it.type === 'bomb') {
+          hp--;
+          shakeTime = 16;
+          terminalNode.classList.add('shake');
+          document.getElementById('statusDot').className = 'status-dot danger';
+          freezeFramesLeft = 8; // 8帧强烈停顿卡肉
+
+          setTimeout(() => {
+            if(gameState === 'RUNNING') document.getElementById('statusDot').className = 'status-dot';
+          }, 300);
+          
+          if (hp <= 0) triggerGameOver();
+        } else if (it.type === 'heart') {
+          if (hp < maxHp) hp++;
+        }
+        items.splice(i, 1);
+        continue;
+      }
+
+      // 飞出左边界移除
+      if (it.x < -40) {
+        items.splice(i, 1);
+      }
+    }
+
+    ctx.clearRect(0, 0, rect.width, rect.height);
+    drawAudioVisualizer(rect); // 绘制波形图
+    items.forEach(it => draw3DItem(ctx, it));
+    draw3DPlayer(ctx, player);
+    drawHUD(rect);
+
+    requestAnimationFrame(update);
+  }
+
+  function triggerGameOver() {
+    gameState = 'GAMEOVER';
+    if(audioCtx) audioCtx.suspend();
+    document.getElementById('pauseToggleBtn').style.display = 'none';
+    document.getElementById('statusDot').className = 'status-dot danger';
+    document.getElementById('menuOverlay').classList.remove('hidden');
+    updateText();
+  }
+
+  document.getElementById('actionBtn').onclick = async function() {
+    let success = await initAudioFeed();
+    if (!success) return;
+
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+
+    if (gameState === 'PAUSED') {
+      gameState = 'RUNNING';
+      document.getElementById('menuOverlay').classList.add('hidden');
+      lastSpawnTime = performance.now();
+      requestAnimationFrame(update);
+      return;
+    }
+
+    score = 0; hp = maxHp; items = [];
+    timeDilation = 1.0; freezeFramesLeft = 0; slowRecoverFramesLeft = 0;
+    gameState = 'RUNNING';
+    document.getElementById('statusDot').className = 'status-dot';
+    document.getElementById('menuOverlay').classList.add('hidden');
+    document.getElementById('pauseToggleBtn').style.display = 'block';
+
+    const rect = canvas.getBoundingClientRect();
+    player.y = rect.height / 2;
+    player.vy = 0;
+    lastSpawnTime = performance.now();
+    
+    requestAnimationFrame(update);
+  };
+
+  resizeCanvas();
+  setupLanguage();
+  updateText();
+  update(0);
+})();
+</script>
+</body>
+</html>
