@@ -57,7 +57,7 @@
     position: relative;
   }
 
-  header{ display:flex; align-items:center; gap:10px; margin-bottom:2px; }
+  header{ display:flex; align-items:center; gap:10px; margin-bottom:2px; position: relative;}
 
   .status-dot{
     width:10px; height:10px; border-radius:50%;
@@ -75,6 +75,16 @@
     text-shadow:0 0 15px rgba(79,179,255,.3);
   }
 
+  /* 顶层小齿轮暂停按钮 */
+  .btn-pause-toggle {
+    position: absolute;
+    right: 0; top: 0;
+    background: none; border: none;
+    color: var(--muted); font-size: 20px;
+    cursor: pointer; display: none;
+  }
+  .btn-pause-toggle:hover { color: var(--text); }
+
   .eyebrow{
     font-family:var(--font-mono);
     font-size:10px;
@@ -84,7 +94,6 @@
     margin-bottom:12px;
   }
 
-  /* 游戏画布区包装 */
   .canvas-container {
     flex: 1;
     position: relative;
@@ -100,50 +109,114 @@
     height: 100%;
   }
 
-  /* 覆盖UI面板 */
+  /* 覆盖UI层面板 */
   .overlay {
     position: absolute;
     top:0; left:0; width:100%; height:100%;
-    background: rgba(10,12,8,0.85);
+    background: rgba(10,12,8,0.92);
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 30px;
+    padding: 24px;
     text-align: center;
     z-index: 10;
+    overflow-y: auto;
   }
 
   .overlay.hidden { display: none; }
 
   .menu-title {
     font-family:var(--font-display);
-    font-size: 26px;
+    font-size: 24px;
     color: var(--blue);
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
 
   .menu-desc {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--muted);
-    margin-bottom: 24px;
-    line-height: 1.6;
+    margin-bottom: 16px;
+    line-height: 1.5;
+    max-width: 300px;
+  }
+
+  /* 控制组件表单区 */
+  .settings-block {
+    width: 100%;
     max-width: 280px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+    text-align: left;
+  }
+  
+  .setting-row {
+    margin-bottom: 12px;
+  }
+  .setting-row:last-child { margin-bottom: 0; }
+
+  .setting-label {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .setting-label span.val { color: var(--blue); font-weight: bold; }
+
+  .slider-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    background: var(--panel);
+    height: 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%; background: var(--blue);
+    cursor: pointer;
+  }
+
+  .btn-mute {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 8px; font-size: 11px;
+    border-radius: 4px; cursor: pointer;
+    font-family: var(--font-body);
+    min-width: 54px; text-align: center;
+  }
+  .btn-mute.active {
+    background: var(--red); color: #0a0c08; border-color: var(--red);
   }
 
   .btn-primary{
     padding:12px 32px; border:none; border-radius:8px;
-    background:var(--blue); color:#0a0c08; font-weight:700; font-size:15px;
+    background:var(--blue); color:#0a0c08; font-weight:700; font-size:14px;
     letter-spacing:.02em; cursor:pointer; font-family:var(--font-display);
     box-shadow:0 4px 15px rgba(79,179,255,.3);
-    margin-bottom: 20px;
+    margin-bottom: 14px;
     transition: transform 0.1s;
   }
   .btn-primary:active{ transform: scale(0.96); }
 
   .pill-group{ display:inline-flex; gap:6px; background: var(--panel2); padding: 4px; border-radius: 8px; border: 1px solid var(--border); }
   .pill{
-    padding:6px 14px;
+    padding:5px 12px;
     color:var(--muted);
     border-radius:6px;
     font-size:11px;
@@ -152,10 +225,7 @@
   }
   .pill.active{ background: var(--panel); color:var(--text); border: 1px solid var(--border); }
 
-  /* 震动动画效果 */
-  .shake {
-    animation: screenShake 0.15s infinite;
-  }
+  .shake { animation: screenShake 0.15s infinite; }
   @keyframes screenShake {
     0%, 100% { transform: translate(0, 0); }
     25% { transform: translate(-3px, 2px); }
@@ -169,6 +239,7 @@
   <header>
     <div class="status-dot" id="statusDot"></div>
     <h1 id="mainTitle">重力磁盘</h1>
+    <button class="btn-pause-toggle" id="pauseToggleBtn">⚙️</button>
   </header>
   <div class="eyebrow" id="subtitle">协议 // 陀螺仪驱动 · 能量拦截矩阵</div>
 
@@ -178,6 +249,30 @@
     <div class="overlay" id="menuOverlay">
       <h2 class="menu-title" id="menuTitle">拦截准备</h2>
       <p class="menu-desc" id="menuDesc">倾斜手机或移动鼠标控制磁盘，收集能量金币，修复受损血量，避开致命炸弹。</p>
+      
+      <div class="settings-block">
+        <div class="setting-row">
+          <div class="setting-label">
+            <span id="cfgLabelSens">陀螺仪灵敏度</span>
+            <span class="val" id="sensVal">1.5x</span>
+          </div>
+          <div class="slider-container">
+            <input type="range" id="sensSlider" min="0.5" max="3.5" step="0.1" value="1.5">
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-label">
+            <span id="cfgLabelVol">主音量</span>
+            <span class="val" id="volVal">70%</span>
+          </div>
+          <div class="slider-container">
+            <input type="range" id="volSlider" min="0" max="100" step="5" value="70">
+            <button class="btn-mute" id="muteBtn">MUTE</button>
+          </div>
+        </div>
+      </div>
+
       <button class="btn-primary" id="actionBtn">激活磁盘</button>
       
       <div class="pill-group" id="langGroup">
@@ -190,7 +285,26 @@
 
 <script>
 (function(){
-  // ---------- 双语包 ----------
+  // ==========================================
+  // 🎵 1. 自定义音频源配置地址 (后期你可以在这里修改URL)
+  // ==========================================
+  const BGM_URL        = "bgm.mp3";          // 背景音乐
+  const COIN_SFX_URL   = "coin.mp3";         // 吃到金币
+  const HEALTH_SFX_URL = "health.mp3";       // 吃到血包
+  const BOMB_SFX_URL   = "bomb.mp3";         // 吃到炸弹
+
+  // 创建音频实例对象
+  const audioContext = {
+    bgm: new Audio(BGM_URL),
+    coin: new Audio(COIN_SFX_URL),
+    health: new Audio(HEALTH_SFX_URL),
+    bomb: new Audio(BOMB_SFX_URL)
+  };
+  
+  // 配置BGM循环播放
+  audioContext.bgm.loop = true;
+
+  // ---------- 多语言配置 ----------
   const i18n = {
     zh: {
       pageTitle: "重力磁盘 · 陀螺仪终端",
@@ -200,10 +314,15 @@
       startDesc: "倾斜手机（左右）或移动鼠标控制底部3D磁盘。收集金币与急救箱，躲避炸弹！",
       btnStart: "▶ 激活磁盘",
       btnRestart: "🔄 重新初始化",
+      btnResume: "▶ 继续拦截",
       overTitle: "💥 矩阵崩溃",
       overDesc: "结构血量归零。最终拦截完整度分数: {score}",
+      pauseTitle: "⏸ 拦截挂起",
+      pauseDesc: "终端驱动暂停中。可在下方调整硬件参数。",
       uiScore: "积分 SCORE:",
-      uiFull: "满"
+      cfgSens: "陀螺仪灵敏度",
+      cfgVol: "主音量",
+      btnMute: "静音"
     },
     en: {
       pageTitle: "Gravity Disk · Gyro Terminal",
@@ -213,57 +332,107 @@
       startDesc: "Tilt your device left/right or move mouse to slide the 3D disk. Collect coins & health packs, avoid bombs!",
       btnStart: "▶ Activate Disk",
       btnRestart: "🔄 Re-initialize",
+      btnResume: "▶ Resume Matrix",
       overTitle: "💥 SYSTEM COLLAPSED",
       overDesc: "Structural integrity reached zero. Final synchronization score: {score}",
+      pauseTitle: "⏸ SYSTEM PAUSED",
+      pauseDesc: "Defusal suspension active. Re-calibrate hardware metrics below.",
       uiScore: "SCORE:",
-      uiFull: "MAX"
+      cfgSens: "Gyro Sensitivity",
+      cfgVol: "Master Volume",
+      btnMute: "Mute"
     }
   };
 
   let currentLang = 'zh';
 
-  // ---------- 游戏引擎核心变量 ----------
+  // ---------- 核心控制与音频参数 ----------
+  let sensitivity = 1.5; 
+  let volume = 0.7;       
+  let isMuted = false;
+
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
   const terminalNode = document.getElementById('terminalNode');
 
-  let gameState = 'START'; // START, RUNNING, GAMEOVER
+  let gameState = 'START'; // START, RUNNING, PAUSED, GAMEOVER
   let score = 0;
   let hp = 3;
   const maxHp = 3;
 
-  // 玩家结构体 (3D 椭圆盘子)
+  // 玩家模型 (引入平滑阻尼算法相关的速度变量)
   const player = {
     x: 0,
     y: 0,
-    width: 85,    // 盘子横向主半径
-    height: 18,   // 盘子纵向次半径 (形成3D扁平透视)
-    thickness: 12, // 3D 厚度高度
-    speed: 0,
+    width: 85,    
+    height: 18,   
+    thickness: 12, 
+    vx: 0,         // X轴当前真实运动速度
     targetX: 0
   };
 
   let items = [];
   let lastSpawnTime = 0;
-  let spawnInterval = 1000; // 毫秒下落间隔
+  let spawnInterval = 1000; 
   let globalSpeedFactor = 1.0; 
-  let shakeTime = 0; // 屏幕震动剩余帧数
+  let shakeTime = 0; 
+
+  // ==========================================
+  // 🔊 音频触发辅助方法
+  // ==========================================
+  function updateAudioSettings() {
+    let targetVol = isMuted ? 0 : volume;
+    // 改变主BGM和音效音量
+    audioContext.bgm.volume = targetVol;
+    audioContext.coin.volume = targetVol;
+    audioContext.health.volume = targetVol;
+    audioContext.bomb.volume = targetVol;
+  }
+
+  function playSFX(type) {
+    const sfx = audioContext[type];
+    if (!sfx) return;
+    // 强行重置进度以允许高频连续触发重叠播放
+    sfx.currentTime = 0; 
+    sfx.play().catch(()=>{/* 拦截部分浏览器未交互前禁止播放的警告 */});
+  }
 
   // ---------- 初始化与适配 ----------
   function resizeCanvas() {
-    // 动态分配真实分辨率
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width * window.devicePixelRatio;
     canvas.height = rect.height * window.devicePixelRatio;
     ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     
-    // 重置玩家纵向挂载点 (放在画布底部上方 50 像素处)
     player.y = rect.height - 45;
     if (gameState === 'START') {
       player.x = rect.width / 2;
     }
   }
   window.addEventListener('resize', resizeCanvas);
+
+  // ---------- 设置滑块联动交互 ----------
+  const sensSlider = document.getElementById('sensSlider');
+  const sensVal = document.getElementById('sensVal');
+  sensSlider.oninput = function() {
+    sensitivity = parseFloat(this.value);
+    sensVal.textContent = sensitivity.toFixed(1) + 'x';
+  };
+
+  const volSlider = document.getElementById('volSlider');
+  const volVal = document.getElementById('volVal');
+  volSlider.oninput = function() {
+    volume = parseInt(this.value) / 100;
+    volVal.textContent = this.value + '%';
+    updateAudioSettings();
+  };
+
+  const muteBtn = document.getElementById('muteBtn');
+  muteBtn.onclick = function() {
+    isMuted = !isMuted;
+    this.classList.toggle('active', isMuted);
+    updateAudioSettings();
+  };
 
   // ---------- 语言切换 ----------
   function setupLanguage() {
@@ -281,6 +450,9 @@
     document.getElementById('pageTitle').textContent = lang.pageTitle;
     document.getElementById('mainTitle').textContent = lang.mainTitle;
     document.getElementById('subtitle').textContent = lang.subtitle;
+    document.getElementById('cfgLabelSens').textContent = lang.cfgSens;
+    document.getElementById('cfgLabelVol').textContent = lang.cfgVol;
+    document.getElementById('muteBtn').textContent = lang.btnMute;
     
     if (gameState === 'START') {
       document.getElementById('menuTitle').textContent = lang.startTitle;
@@ -290,18 +462,22 @@
       document.getElementById('menuTitle').textContent = lang.overTitle;
       document.getElementById('menuDesc').textContent = lang.overDesc.replace('{score}', score);
       document.getElementById('actionBtn').textContent = lang.btnRestart;
+    } else if (gameState === 'PAUSED') {
+      document.getElementById('menuTitle').textContent = lang.pauseTitle;
+      document.getElementById('menuDesc').textContent = lang.pauseDesc;
+      document.getElementById('actionBtn').textContent = lang.btnResume;
     }
   }
 
-  // ---------- 传感器与控制器核心 ----------
-  // 1. 兼容鼠标桌面端
+  // ---------- 驱动控制器 (鼠标/触控/陀螺仪) ----------
   canvas.addEventListener('mousemove', (e) => {
+    if (gameState !== 'RUNNING') return;
     const rect = canvas.getBoundingClientRect();
     player.targetX = e.clientX - rect.left;
   });
 
-  // 2. 兼容移动端触摸
   canvas.addEventListener('touchmove', (e) => {
+    if (gameState !== 'RUNNING') return;
     if(e.touches.length > 0) {
       const rect = canvas.getBoundingClientRect();
       player.targetX = e.touches[0].clientX - rect.left;
@@ -309,28 +485,36 @@
     e.preventDefault();
   }, { passive: false });
 
-  // 3. 核心：陀螺仪/重力感应驱动
   if (window.DeviceOrientationEvent) {
     window.addEventListener('deviceorientation', (e) => {
       if (gameState !== 'RUNNING') return;
-      // gamma 是设备左右倾斜角 (-90 到 90)
-      let tilt = e.gamma; 
+      let tilt = e.gamma; // 左右倾斜角
       if (tilt !== null && tilt !== undefined) {
-        // 映射倾斜感应灵敏度
-        let sensitivity = 1.3;
-        player.speed = tilt * sensitivity;
+        // 【重构灵敏度算法】：通过倾斜角度直接叠加目标加速度，乘以调校后的灵敏度滑动条权重
+        let baseForce = tilt * 0.28 * sensitivity; 
+        player.vx += baseForce;
       }
     }, true);
   }
 
-  // ---------- 掉落物生成逻辑 ----------
+  // 悬浮小齿轮控制暂停
+  const pauseToggleBtn = document.getElementById('pauseToggleBtn');
+  pauseToggleBtn.onclick = function() {
+    if (gameState === 'RUNNING') {
+      gameState = 'PAUSED';
+      audioContext.bgm.pause(); // 暂停BGM
+      document.getElementById('menuOverlay').classList.remove('hidden');
+      updateText();
+    }
+  };
+
+  // ---------- 掉落物孵化 ----------
   function spawnItem() {
     const rect = canvas.getBoundingClientRect();
     const x = Math.random() * (rect.width - 40) + 20;
     const y = -30;
     const speed = (Math.random() * 2 + 2.5) * globalSpeedFactor;
     
-    // 概率控制：70% 金币, 22% 炸弹, 8% 医疗箱
     const rand = Math.random();
     let type = 'coin';
     if (rand > 0.7 && rand <= 0.92) {
@@ -341,29 +525,22 @@
 
     items.push({
       x, y, type, speed,
-      rotX: Math.random() * Math.PI, // 赋予3D旋转的初始相位
+      rotX: Math.random() * Math.PI, 
       rotY: Math.random() * Math.PI,
       size: type === 'heart' ? 14 : 12
     });
   }
 
-  // ---------- 3D 无图Canvas渲染核心 ----------
-  
-  // 1. 绘制带有厚度和高光金属感的3D圆盘
+  // ---------- 3D 无图渲染 Canvas Core ----------
   function draw3DPlayer(ctx, p) {
     ctx.save();
-    
-    // 绘制3D侧面厚度 (从下往上层叠形成3D圆柱面体)
     const thickness = p.thickness;
     for(let i = thickness; i > 0; i--) {
       ctx.beginPath();
-      // 随着高度微调颜色，制造侧部光影渐变
       let shade = 25 + (thickness - i) * 3;
       ctx.fillStyle = `rgb(${shade}, ${shade + 15}, ${shade + 35})`;
       ctx.ellipse(p.x, p.y + i, p.width, p.height, 0, 0, Math.PI * 2);
       ctx.fill();
-      
-      // 前边缘勾勒亮边
       if (i === thickness) {
         ctx.strokeStyle = 'rgba(79,179,255,0.4)';
         ctx.lineWidth = 1.5;
@@ -371,9 +548,8 @@
       }
     }
 
-    // 绘制盘子最上表面
     let topGrad = ctx.createRadialGradient(p.x, p.y - 5, 2, p.x, p.y, p.width);
-    topGrad.addColorStop(0, '#ffffff'); // 核心能量灯高光
+    topGrad.addColorStop(0, '#ffffff'); 
     topGrad.addColorStop(0.1, '#66cbff');
     topGrad.addColorStop(0.4, '#1b3a4b');
     topGrad.addColorStop(1, '#0e1d26');
@@ -383,36 +559,27 @@
     ctx.ellipse(p.x, p.y, p.width, p.height, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // 盘面刻线与能量装饰线 (增强立体环绕感)
     ctx.beginPath();
     ctx.strokeStyle = 'rgba(255,255,255,0.25)';
     ctx.lineWidth = 2;
     ctx.ellipse(p.x, p.y, p.width * 0.7, p.height * 0.7, 0, 0, Math.PI * 2);
     ctx.stroke();
-
     ctx.restore();
   }
 
-  // 2. 绘制具有3D旋转姿态的物品
   function draw3DItem(ctx, item) {
     ctx.save();
     ctx.translate(item.x, item.y);
-    
-    // 随帧自转
     item.rotY += 0.04;
     item.rotX += 0.02;
 
     if (item.type === 'coin') {
-      // 3D 金币渲染：使用正弦余弦矩阵变换模拟3D硬币翻转
-      ctx.scale(Math.cos(item.rotY), 1); // 横向压缩模拟Y轴旋转
-      
-      // 金币厚度亮边
+      ctx.scale(Math.cos(item.rotY), 1); 
       ctx.beginPath();
       ctx.fillStyle = '#b58100';
       ctx.arc(0, 2, item.size, 0, Math.PI * 2);
       ctx.fill();
 
-      // 金币主盘面
       let coinGrad = ctx.createRadialGradient(-3, -3, 1, 0, 0, item.size);
       coinGrad.addColorStop(0, '#fff3a1');
       coinGrad.addColorStop(0.5, '#ffb300');
@@ -422,7 +589,6 @@
       ctx.arc(0, 0, item.size, 0, Math.PI * 2);
       ctx.fill();
       
-      // 内部内凹立体环
       ctx.beginPath();
       ctx.strokeStyle = '#e69d00';
       ctx.lineWidth = 1.5;
@@ -430,73 +596,50 @@
       ctx.stroke();
 
     } else if (item.type === 'bomb') {
-      // 3D 科技感高危炸弹：球体上绘制警示红色自发光
       let bombGrad = ctx.createRadialGradient(-4, -4, 2, 0, 0, item.size);
       bombGrad.addColorStop(0, '#ff7d75');
       bombGrad.addColorStop(0.4, '#ff4136');
       bombGrad.addColorStop(0.9, '#3a0906');
       bombGrad.addColorStop(1, '#140201');
       
-      // 立体投影
       ctx.shadowColor = 'rgba(255, 65, 54, 0.4)';
       ctx.shadowBlur = 10;
-
       ctx.beginPath();
       ctx.fillStyle = bombGrad;
       ctx.arc(0, 0, item.size, 0, Math.PI * 2);
       ctx.fill();
 
-      // 闪烁的引信及危险标识条
       ctx.shadowBlur = 0;
       ctx.rotate(item.rotX);
       ctx.fillStyle = (Math.floor(Date.now() / 150) % 2 === 0) ? '#ffffff' : '#ff4136';
       ctx.fillRect(-item.size, -2, item.size * 2, 4);
 
     } else if (item.type === 'heart') {
-      // 3D 浮动急救箱：立方体伪3D视差效果
       ctx.rotate(item.rotY * 0.5);
-      
-      // 右/底侧3D阴影面
       ctx.fillStyle = '#1e5c27';
       ctx.fillRect(-item.size+2, -item.size+2, item.size*2, item.size*2);
-      
-      // 主前表面面
-      ctx.fillStyle = varColor('--green');
+      ctx.fillStyle = '#39d353';
       ctx.fillRect(-item.size, -item.size, item.size*2 - 2, item.size*2 - 2);
-
-      // 十字救援标示
       ctx.fillStyle = '#ffffff';
-      // 横
       ctx.fillRect(-item.size + 5, -2, item.size*2 - 12, 4);
-      // 竖
       ctx.fillRect(-2, -item.size + 5, 4, item.size*2 - 12);
     }
-
     ctx.restore();
   }
 
-  // 辅助获取CSS自定义变量
-  function varColor(varName) {
-    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
-  }
-
-  // 3. 绘制平铺HUD数据层
   function drawHUD(rect) {
     const lang = i18n[currentLang];
-    // 分数渲染
-    ctx.fillStyle = varColor('--muted');
+    ctx.fillStyle = '#7d8169';
     ctx.font = `700 11px var(--font-mono)`;
     ctx.fillText(lang.uiScore, 16, 26);
     
-    ctx.fillStyle = varColor('--text');
+    ctx.fillStyle = '#e9e7da';
     ctx.font = `700 24px var(--font-display)`;
     ctx.fillText(score, 16, 52);
 
-    // 生命槽渲染 (立体能量块设计)
     const startX = rect.width - 95;
     for (let i = 0; i < maxHp; i++) {
       ctx.save();
-      // 未填满的血条显示空心暗格
       if (i < hp) {
         let hpGrad = ctx.createLinearGradient(startX + i*26, 20, startX + i*26, 36);
         hpGrad.addColorStop(0, '#5eff82');
@@ -507,7 +650,6 @@
       } else {
         ctx.fillStyle = '#22251a';
       }
-      // 绘制带斜角的生命矩阵条
       ctx.beginPath();
       ctx.moveTo(startX + i * 26, 20);
       ctx.lineTo(startX + i * 26 + 20, 20);
@@ -519,63 +661,57 @@
     }
   }
 
-  // ---------- 核心游戏循环和物理演算 ----------
+  // ---------- 核心主物理循环演算 ----------
   function update(time) {
     if (gameState !== 'RUNNING') return;
 
     const rect = canvas.getBoundingClientRect();
 
-    // 1. 处理震动
     if (shakeTime > 0) {
       shakeTime--;
       if (shakeTime === 0) terminalNode.classList.remove('shake');
     }
 
-    // 2. 玩家控制器滑行物理平滑计算
-    if (player.speed !== 0) {
-      // 陀螺仪模式
-      player.x += player.speed;
-    } else {
-      // 触控/鼠标缓动模式
+    // 【重构物理平滑阻尼算法】：处理玩家盘子位移
+    // 增加空气摩擦阻尼力 (使陀螺仪控制能及时停住，不会持续漂移)
+    player.vx *= 0.84; 
+    player.x += player.vx;
+
+    // 混合计算触屏和鼠标的绝对坐标追踪
+    if (player.targetX !== player.x) {
       player.x += (player.targetX - player.x) * 0.22;
     }
     
-    // 边界撞墙拦截阻尼
-    if (player.x < player.width * 0.6) player.x = player.width * 0.6;
-    if (player.x > rect.width - player.width * 0.6) player.x = rect.width - player.width * 0.6;
+    // 撞墙拦截
+    if (player.x < player.width * 0.5) { player.x = player.width * 0.5; player.vx = 0; }
+    if (player.x > rect.width - player.width * 0.5) { player.x = rect.width - player.width * 0.5; player.vx = 0; }
 
-    // 3. 动态提升难度因数
     globalSpeedFactor = 1.0 + (score / 150);
     spawnInterval = Math.max(500, 1000 - (score * 1.5));
 
-    // 4. 定时生成器
     if (time - lastSpawnTime > spawnInterval) {
       spawnItem();
       lastSpawnTime = time;
     }
 
-    // 5. 迭代掉落物与碰撞逻辑
     for (let i = items.length - 1; i >= 0; i--) {
       let it = items[i];
       it.y += it.speed;
 
-      // 3D 碰撞盒精准交叉检验 (基于盘子的立体椭圆面积)
       let dx = it.x - player.x;
       let dy = it.y - player.y;
       
-      // 检测是否命中盘子表面纵横主半径范围
       let distanceCheck = (dx * dx) / (player.width * player.width) + (dy * dy) / (player.height * player.height);
-      
-      // 同时也算入纵向盘子厚度的容错区
       let inThickness = it.y >= player.y && it.y <= player.y + player.thickness && Math.abs(dx) <= player.width;
 
       if (distanceCheck <= 1.1 || inThickness) {
-        // 成功拦截
         if (it.type === 'coin') {
           score += 10;
+          playSFX('coin'); // 触发金币声
         } else if (it.type === 'bomb') {
           hp--;
-          shakeTime = 10; // 触发10帧核心物理震动
+          playSFX('bomb'); // 触发炸弹声
+          shakeTime = 10; 
           terminalNode.classList.add('shake');
           document.getElementById('statusDot').className = 'status-dot danger';
           setTimeout(() => {
@@ -586,82 +722,88 @@
             triggerGameOver();
           }
         } else if (it.type === 'heart') {
-          if (hp < maxHp) hp++;
+          if (hp < maxHp) {
+            hp++;
+            playSFX('health'); // 触发加血声
+          }
         }
         items.splice(i, 1);
         continue;
       }
 
-      // 出界判定
       if (it.y > rect.height + 40) {
         items.splice(i, 1);
       }
     }
 
-    // ---------- 执行绘图渲染 ----------
     ctx.clearRect(0, 0, rect.width, rect.height);
-    
-    // 渲染所有下落体
     items.forEach(it => draw3DItem(ctx, it));
-    
-    // 渲染3D玩家接盘
     draw3DPlayer(ctx, player);
-    
-    // 渲染高层HUD
     drawHUD(rect);
 
     requestAnimationFrame(update);
   }
 
-  // ---------- 状态控制流 ----------
+  // ---------- 游戏流调度 ----------
   function triggerGameOver() {
     gameState = 'GAMEOVER';
+    audioContext.bgm.pause(); // 游戏结束暂停播放BGM
+    document.getElementById('pauseToggleBtn').style.display = 'none';
     document.getElementById('statusDot').className = 'status-dot danger';
     document.getElementById('menuOverlay').classList.remove('hidden');
     updateText();
   }
 
   document.getElementById('actionBtn').onclick = function() {
-    // 移动端安全触发陀螺仪权限申请请求（针对iOS等高级限制）
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
       DeviceOrientationEvent.requestPermission()
         .then(permissionState => {
-          if (permissionState === 'granted') {
-            initGameStart();
-          } else {
-            // 被拒绝也能依赖触屏/鼠标继续完美游玩
-            initGameStart();
-          }
+          initGameStartOrResume();
         })
-        .catch(() => initGameStart());
+        .catch(() => initGameStartOrResume());
     } else {
-      initGameStart();
+      initGameStartOrResume();
     }
   };
 
-  function initGameStart() {
-    // 重置所有核心上下文状态
+  function initGameStartOrResume() {
+    // 如果之前是暂停挂起状态，点击则直接恢复游玩
+    if (gameState === 'PAUSED') {
+      gameState = 'RUNNING';
+      document.getElementById('menuOverlay').classList.add('hidden');
+      audioContext.bgm.play().catch(()=>{}); // 继续BGM
+      lastSpawnTime = performance.now();
+      requestAnimationFrame(update);
+      return;
+    }
+
+    // 全新开始新一轮游戏
     score = 0;
     hp = maxHp;
     items = [];
     gameState = 'RUNNING';
-    player.speed = 0;
+    player.vx = 0;
     document.getElementById('statusDot').className = 'status-dot';
     document.getElementById('menuOverlay').classList.add('hidden');
+    document.getElementById('pauseToggleBtn').style.display = 'block'; // 呼出右上角设置
     
+    // 初始化音量音效设置，并启动背景音乐
+    updateAudioSettings();
+    audioContext.bgm.currentTime = 0;
+    audioContext.bgm.play().catch(()=>{});
+
     const rect = canvas.getBoundingClientRect();
     player.x = rect.width / 2;
     player.targetX = rect.width / 2;
     lastSpawnTime = performance.now();
     
-    // 进入帧循环
     requestAnimationFrame(update);
   }
 
-  // ---------- 模块入口加载 ----------
   resizeCanvas();
   setupLanguage();
   updateText();
+  updateAudioSettings(); // 初始化基础音量参数
   update(0);
 
 })();
