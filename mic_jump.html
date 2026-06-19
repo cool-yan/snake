@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
-<title id="pageTitle">声波矩阵 · 麦克风音频终端</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🎙️</text></svg>">
+<title id="pageTitle">声波矩阵 · 旋律音高终端</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🎵</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght=500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#0a0c08;
@@ -136,7 +136,7 @@
     color: var(--muted);
     margin-bottom: 16px;
     line-height: 1.5;
-    max-width: 310px;
+    max-width: 320px;
   }
 
   .settings-block {
@@ -215,28 +215,28 @@
     <h1 id="mainTitle">声波矩阵</h1>
     <button class="btn-pause-toggle" id="pauseToggleBtn">⚙️</button>
   </header>
-  <div class="eyebrow" id="subtitle">协议 // 音频声络驱动 · 分贝捕获终端</div>
+  <div class="eyebrow" id="subtitle">协议 // 音频声络驱动 · 旋律音高检测终端</div>
 
   <div class="canvas-container">
     <canvas id="gameCanvas"></canvas>
 
     <div class="overlay" id="menuOverlay">
-      <h2 class="menu-title" id="menuTitle">音频对齐准备</h2>
-      <p class="menu-desc" id="menuDesc">本游戏需要麦克风授权。用声音大小控制磁盘浮空高度（发声越高，不发声下落），躲避横向飞来的炸弹！</p>
+      <h2 class="menu-title" id="menuTitle">旋律校准准备</h2>
+      <p class="menu-desc" id="menuDesc">哼唱不同音高（Do Re Mi Fa...）来控制磁盘高度！唱低音盘子下降，唱高音盘子上升。下方可自由对齐你的个人音域。</p>
       
       <div class="settings-block">
         <div class="setting-row">
           <div class="setting-label">
-            <span id="cfgLabelSens">声音灵敏度</span>
-            <span class="val" id="sensVal">65</span>
+            <span id="cfgLabelSens">音域基准中心 (男低音~女高音)</span>
+            <span class="val" id="sensVal">180 Hz</span>
           </div>
           <div class="slider-container">
-            <input type="range" id="sensSlider" min="20" max="95" step="5" value="65">
+            <input type="range" id="sensSlider" min="100" max="400" step="10" value="180">
           </div>
         </div>
       </div>
 
-      <button class="btn-primary" id="actionBtn">激活接收器</button>
+      <button class="btn-primary" id="actionBtn">激活音讯分析器</button>
       
       <div class="pill-group" id="langGroup">
         <div class="pill active" data-value="zh">简体中文</div>
@@ -250,41 +250,41 @@
 (function(){
   const i18n = {
     zh: {
-      pageTitle: "声波矩阵 · 麦克风音频终端",
+      pageTitle: "声波矩阵 · 旋律音高终端",
       mainTitle: "声波矩阵",
-      subtitle: "协议 // 音频声络驱动 · 分贝捕获终端",
-      startTitle: "音频对齐准备",
-      startDesc: "需要麦克风输入！发声（发出“啊”或吹气）控制3D矩阵盘垂直升高，不发声则受重力下降。拦截金币，闪避横向炸弹！",
-      btnStart: "▶ 激活接收器",
+      subtitle: "协议 // 音频声络驱动 · 旋律音高检测终端",
+      startTitle: "旋律校准准备",
+      startDesc: "通过哼唱音高来精准定位磁盘的高度！唱低音（Do）盘子往下降，唱高音（Sol）盘子往上升。请调整下方滑块以自适应你的声线音域。",
+      btnStart: "▶ 激活音讯分析器",
       btnRestart: "🔄 重新初始化驱动",
-      btnResume: "▶ 恢复音频流",
-      overTitle: "💥 驱动熔断",
-      overDesc: "结构血量归零。最终声频同步完整度分数: {score}",
-      pauseTitle: "⏸ 接收挂起",
-      pauseDesc: "声学采样暂停。可在下方调整硬件灵敏度参数。",
+      btnResume: "▶ 恢复音频捕捉",
+      overTitle: "💥 核心频率熔断",
+      overDesc: "拦截屏障生命归零。最终频率对齐分数: {score}",
+      pauseTitle: "⏸ 采样挂起",
+      pauseDesc: "基频捕获暂停。可在下方调整音域频率基准。",
       uiScore: "积分 SCORE:",
-      cfgSens: "声音灵敏度"
+      cfgSens: "音域基准中心"
     },
     en: {
-      pageTitle: "Sonic Matrix · Microphone Terminal",
+      pageTitle: "Sonic Matrix · Pitch Tracking Terminal",
       mainTitle: "Sonic Matrix",
-      subtitle: "PROTOCOL // AUDIO INFRASTRUCTURE · DECIBEL CAPTURE",
-      startTitle: "AUDIO CALIBRATION",
-      startDesc: "Microphone permission required! Make sound (say 'Ah' or blow) to lift the 3D disk vertically, remain silent to descend. Catch coins, dodge incoming bombs!",
-      btnStart: "▶ Activate Receiver",
+      subtitle: "PROTOCOL // AUDIO INFRASTRUCTURE · PITCH FREQUENCY INTERACTION",
+      startTitle: "MELODY CALIBRATION",
+      startDesc: "Sing or hum notes (Do Re Mi...) to map the disk height! Low pitches drop the disk, high pitches lift it. Calibrate the slider below to fit your vocal register.",
+      btnStart: "▶ Activate Pitch Analyzer",
       btnRestart: "🔄 Re-initialize Driver",
-      btnResume: "▶ Resume Audio Stream",
-      overTitle: "💥 DRIVER OVERFLOW",
-      overDesc: "Structural health reached zero. Final decibel synchronization score: {score}",
-      pauseTitle: "⏸ SAMPLING PAUSED",
-      pauseDesc: "Acoustic feed suspended. Re-calibrate microphone metrics below.",
+      btnResume: "▶ Resume Pitch Tracking",
+      overTitle: "💥 CORE OSCILLATION OVERFLOW",
+      overDesc: "Matrix collapsed. Final acoustic synchronization score: {score}",
+      pauseTitle: "⏸ SAMPLING SUSPENDED",
+      pauseDesc: "Frequency capturing paused. Adjust your base vocal octave range below.",
       uiScore: "SCORE:",
-      cfgSens: "Mic Sensitivity"
+      cfgSens: "Base Pitch Center"
     }
   };
 
   let currentLang = 'zh';
-  let micSensitivity = 65; 
+  let baseHzCenter = 180; // 默认男高音/女低音均衡基准 (Hz)
 
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
@@ -295,24 +295,22 @@
   let hp = 3;
   const maxHp = 3;
 
-  // Web Audio 核心变量
+  // Web Audio 与 Pitch Detection 核心变量
   let audioCtx = null;
   let analyser = null;
   let microphone = null;
-  let dataArray = new Uint8Array(0);
-  let currentVolume = 0; // 实时检测到的平滑音量归一值 (0-1)
+  let buf = new Float32Array(1024); // 时域缓冲区
+  let currentTargetY = 200; // 由当前声音音高映射算出的目标位置
+  let lastValidPitch = 180; // 锁定最后的有效音高，防止噪音干扰突然归零
 
-  // 玩家状态（横向固定在1/4处，通过声音控制Y轴高度）
+  // 玩家状态（横向固定，纵向由音高绝对控制）
   const player = {
     x: 90,
     y: 200,
-    targetY: 200,
     width: 60,
     height: 14,
     thickness: 10,
-    vy: 0,
-    gravity: 0.35,
-    liftForce: 1.1
+    easeSpeed: 0.15 // 缓动跟随速度，数值越大跟随音高跃动越敏捷
   };
 
   let items = [];
@@ -321,7 +319,7 @@
   let globalSpeedFactor = 1.0;
   let shakeTime = 0;
 
-  // 受击卡肉效果控制
+  // 受击卡肉停顿状态控制
   let timeDilation = 1.0;
   let freezeFramesLeft = 0;
   let slowRecoverFramesLeft = 0;
@@ -334,6 +332,7 @@
     ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     if(gameState === 'START') {
       player.y = rect.height / 2;
+      currentTargetY = rect.height / 2;
     }
   }
   window.addEventListener('resize', resizeCanvas);
@@ -341,8 +340,8 @@
   const sensSlider = document.getElementById('sensSlider');
   const sensVal = document.getElementById('sensVal');
   sensSlider.oninput = function() {
-    micSensitivity = parseInt(this.value, 10);
-    sensVal.textContent = micSensitivity;
+    baseHzCenter = parseInt(this.value, 10);
+    sensVal.textContent = baseHzCenter + ' Hz';
   };
 
   function setupLanguage() {
@@ -387,48 +386,96 @@
     }
   };
 
-  // 初始化麦克风录音
   async function initAudioFeed() {
     if (audioCtx) return true;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 64; // 较小的抽样率，快速响应音量大小
+      analyser.fftSize = 2048; // 足够大的采样率保证基频分析准确度
       microphone = audioCtx.createMediaStreamSource(stream);
       microphone.connect(analyser);
-      dataArray = new Uint8Array(analyser.frequencyBinCount);
       return true;
     } catch (err) {
-      alert("无法访问麦克风驱动，请检查浏览器权限设置！");
+      alert("麦克风初始化失败，请确保授予权限！");
       return false;
     }
   }
 
-  // 采集声音响度并转化为物理推力
-  function analyzeVolume() {
+  // ===================================================
+  // 🔬 核心自相关时域算法 (Autocorrelation Pitch Detection)
+  // ===================================================
+  function detectPitch() {
     if (!analyser) return;
-    analyser.getByteFrequencyData(dataArray);
-    let sum = 0;
-    for (let i = 0; i < dataArray.length; i++) {
-      sum += dataArray[i];
-    }
-    let average = sum / dataArray.length; // 0 ~ 255 的分贝平均值
+    analyser.getFloatTimeDomainData(buf);
     
-    // 映射敏感度阈值
-    let cutoff = (100 - micSensitivity) * 0.5; // 计算过滤下限
-    let rawVol = Math.max(0, average - cutoff) / (200 - cutoff);
-    if(rawVol > 1) rawVol = 1;
+    // 1. 计算信号均方根值 (检查音量是否太微弱，过滤静音及背景杂音)
+    let rms = 0;
+    for (let i = 0; i < buf.length; i++) {
+      rms += buf[i] * buf[i];
+    }
+    rms = Math.sqrt(rms / buf.length);
+    if (rms < 0.015) return; // 声音太小，判定为未发声，磁盘停在原位
 
-    // 平滑过滤
-    currentVolume += (rawVol - currentVolume) * 0.4;
+    // 2. 信号裁剪过滤
+    let r1 = 0, r2 = buf.length - 1, thres = 0.2;
+    for (let i = 0; i < buf.length / 2; i++) if (Math.abs(buf[i]) < thres) { r1 = i; break; }
+    for (let i = buf.length - 1; i > buf.length / 2; i--) if (Math.abs(buf[i]) < thres) { r2 = i; break; }
+    let slicedBuf = buf.subarray(r1, r2);
+
+    // 3. 自相关公式计算周期
+    let c = new Float32Array(slicedBuf.length);
+    for (let i = 0; i < slicedBuf.length; i++) {
+      for (let j = 0; j < slicedBuf.length - i; j++) {
+        c[i] += slicedBuf[j] * slicedBuf[j + i];
+      }
+    }
+
+    // 寻找自相关图中的第一个主峰值
+    let d = 0;
+    while (c[d] > c[d + 1]) d++;
+    let maxval = -1, maxpos = -1;
+    for (let i = d; i < c.length; i++) {
+      if (c[i] > maxval) {
+        maxval = c[i];
+        maxpos = i;
+      }
+    }
+
+    // 通过周期换算对应频率 (Hz)
+    let T = maxpos;
+    if (T > 0) {
+      let pitchHz = audioCtx.sampleRate / T;
+      // 人类声带哼唱的合理声乐基频范围一般在 60Hz ~ 1200Hz 之间
+      if (pitchHz > 60 && pitchHz < 1200) {
+        lastValidPitch = pitchHz;
+      }
+    }
+
+    // 4. 将频率平滑映射成屏幕上的绝对Y轴坐标 (适应设定的自适应音域)
+    const rect = canvas.getBoundingClientRect();
+    // 设定一个音域跨度：允许围绕音域基准中心上下浮动 1.2 个倍频程
+    let minPitchHz = baseHzCenter * 0.5;
+    let maxPitchHz = baseHzCenter * 2.0;
+
+    // 对数映射法（符合人耳对音高的线性感知）
+    let logMin = Math.log2(minPitchHz);
+    let logMax = Math.log2(maxPitchHz);
+    let logCurrent = Math.log2(lastValidPitch);
+
+    let ratio = (logCurrent - logMin) / (logMax - logMin);
+    if (ratio < 0) ratio = 0;
+    if (ratio > 1) ratio = 1;
+
+    // 唱高音 (ratio趋近1) 对应屏幕顶部 (Y值小)，唱低音 (ratio趋近0) 对应屏幕底部 (Y值大)
+    currentTargetY = (rect.height - 100) - ratio * (rect.height - 140) + 40;
   }
 
   function spawnItem() {
     const rect = canvas.getBoundingClientRect();
-    const x = rect.width + 40; // 从屏幕右侧飞出
-    const y = Math.random() * (rect.height - 120) + 60; // 随机垂直轨道
-    const speed = (Math.random() * 1.5 + 2.5) * globalSpeedFactor; // 横向移动速度
+    const x = rect.width + 40;
+    const y = Math.random() * (rect.height - 120) + 60;
+    const speed = (Math.random() * 1.5 + 2.5) * globalSpeedFactor;
     
     const rand = Math.random();
     let type = 'coin';
@@ -458,7 +505,7 @@
       if (isDamaged) {
         ctx.fillStyle = isFlashFrame ? `rgb(${shade + 120}, 15, 15)` : `rgb(${shade + 40}, 10, 10)`;
       } else {
-        ctx.fillStyle = `rgb(${shade}, ${shade + 35}, ${shade + 15})`; // 绿色调
+        ctx.fillStyle = `rgb(${shade}, ${shade + 35}, ${shade + 15})`;
       }
       ctx.ellipse(p.x, p.y + i, p.width, p.height, 0, 0, Math.PI * 2);
       ctx.fill();
@@ -509,19 +556,21 @@
     ctx.restore();
   }
 
-  // 绘制底部的实时分贝频率柱
-  function drawAudioVisualizer(rect) {
-    if(!analyser || gameState !== 'RUNNING') return;
-    const barWidth = rect.width / dataArray.length;
+  // 绘制顶部的音高提示辅助状态指示线
+  function drawPitchGuideHUD(rect) {
+    if(gameState !== 'RUNNING') return;
     ctx.save();
-    ctx.globalAlpha = 0.15;
-    for (let i = 0; i < dataArray.length; i++) {
-      let val = dataArray[i]; // 0-255
-      let percent = val / 255;
-      let height = rect.height * 0.25 * percent;
-      ctx.fillStyle = '#39d353';
-      ctx.fillRect(i * barWidth, rect.height - height, barWidth - 2, height);
-    }
+    ctx.strokeStyle = 'rgba(57, 211, 83, 0.2)';
+    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(15, currentTargetY);
+    ctx.lineTo(rect.width - 15, currentTargetY);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(57, 211, 83, 0.6)';
+    ctx.font = '10px var(--font-mono)';
+    ctx.fillText(`PITCH: ${Math.round(lastValidPitch)}Hz`, 16, currentTargetY - 6);
     ctx.restore();
   }
 
@@ -553,7 +602,7 @@
       if (shakeTime === 0) terminalNode.classList.remove('shake');
     }
 
-    // 时间流速状态演算
+    // 时间流速计算
     if (freezeFramesLeft > 0) {
       timeDilation = 0.02; freezeFramesLeft--;
       if (freezeFramesLeft === 0) slowRecoverFramesLeft = SLOW_DURATION;
@@ -565,29 +614,12 @@
       timeDilation = 1.0;
     }
 
-    // ==========================================
-    // 🎙️ 声控物理计算
-    // ==========================================
-    analyzeVolume(); // 提取实时麦克风音量推力
+    // 执行音高定位运算
+    detectPitch();
 
-    if (currentVolume > 0.05) {
-      // 声音越响，向上的浮空反冲速度 vy 增加越多
-      player.vy -= currentVolume * player.liftForce * timeDilation;
-    }
-    // 持续受到重力影响下坠
-    player.vy += player.gravity * timeDilation;
-    
-    // 限制最大飞行/下坠速度
-    if(player.vy > 6) player.vy = 6;
-    if(player.vy < -7) player.vy = -7;
-
-    player.y += player.vy;
-
-    // 屏幕上下边缘弹性软阻断
-    const minY = 40;
-    const maxY = rect.height - 50;
-    if (player.y < minY) { player.y = minY; player.vy = 0; }
-    if (player.y > maxY) { player.y = maxY; player.vy = 0; }
+    // 核心物理：使盘子平滑地 Lerp 逼近音高决定的绝对高度，缓动受时滞因素相应变沉
+    let currentEase = player.easeSpeed * (0.3 + 0.7 * timeDilation);
+    player.y += (currentTargetY - player.y) * currentEase;
 
     globalSpeedFactor = 1.0 + (score / 180);
     spawnInterval = Math.max(600, 1200 - (score * 1.2));
@@ -597,15 +629,13 @@
       lastSpawnTime = time;
     }
 
-    // 物品横向飞入运算
     for (let i = items.length - 1; i >= 0; i--) {
       let it = items[i];
-      it.x -= it.speed * timeDilation; // 横向推进
+      it.x -= it.speed * timeDilation;
 
       let dx = it.x - player.x;
       let dy = it.y - player.y;
       
-      // 圆形包围盒粗略测算
       let hitCheck = (dx * dx) / (player.width * player.width) + (dy * dy) / (player.height * player.height);
 
       if (hitCheck <= 1.2) {
@@ -616,7 +646,7 @@
           shakeTime = 16;
           terminalNode.classList.add('shake');
           document.getElementById('statusDot').className = 'status-dot danger';
-          freezeFramesLeft = 8; // 8帧强烈停顿卡肉
+          freezeFramesLeft = 8; // 8帧强烈卡肉闪烁变色
 
           setTimeout(() => {
             if(gameState === 'RUNNING') document.getElementById('statusDot').className = 'status-dot';
@@ -630,14 +660,13 @@
         continue;
       }
 
-      // 飞出左边界移除
       if (it.x < -40) {
         items.splice(i, 1);
       }
     }
 
     ctx.clearRect(0, 0, rect.width, rect.height);
-    drawAudioVisualizer(rect); // 绘制波形图
+    drawPitchGuideHUD(rect); // 绘制当前音高高度指示器虚线
     items.forEach(it => draw3DItem(ctx, it));
     draw3DPlayer(ctx, player);
     drawHUD(rect);
@@ -679,7 +708,7 @@
 
     const rect = canvas.getBoundingClientRect();
     player.y = rect.height / 2;
-    player.vy = 0;
+    currentTargetY = rect.height / 2;
     lastSpawnTime = performance.now();
     
     requestAnimationFrame(update);
