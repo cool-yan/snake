@@ -3,120 +3,176 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gyroscope Test</title>
+<title>Gyro 3D Demo</title>
 
 <style>
-body {
-    margin: 0;
-    overflow: hidden;
-    background: #222;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+body{
+    margin:0;
+    overflow:hidden;
+    background:#111;
+    perspective:1000px;
+    height:100vh;
 }
 
-#ball {
-    width: 80px;
-    height: 80px;
-    background: red;
-    border-radius: 50%;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+#world{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform-style:preserve-3d;
+    width:0;
+    height:0;
 }
 
-#info {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    color: white;
-    font-size: 20px;
+.box{
+    position:absolute;
+    transform-style:preserve-3d;
 }
 
-#startBtn {
-    position: fixed;
-    bottom: 30px;
-    padding: 15px 30px;
-    font-size: 18px;
+.face{
+    position:absolute;
+    border:2px solid rgba(255,255,255,0.4);
+    background:rgba(0,150,255,0.08);
+}
+
+#info{
+    position:fixed;
+    top:10px;
+    left:10px;
+    color:white;
+    font-family:sans-serif;
+    z-index:999;
+}
+
+button{
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    padding:12px 20px;
 }
 </style>
 </head>
 <body>
 
-<div id="ball"></div>
-<div id="info">Gamma: 0°</div>
+<div id="info">
+Tilt phone or move mouse
+</div>
+
+<div id="world"></div>
+
 <button id="startBtn">Enable Gyroscope</button>
 
 <script>
-const ball = document.getElementById("ball");
-const info = document.getElementById("info");
+const world = document.getElementById("world");
 
-let currentX = 0;
+function createBox(size,x,y,z){
 
-function startGyro() {
+    const box = document.createElement("div");
+    box.className = "box";
 
-    document.getElementById("startBtn").style.display = "none";
+    const faces = [];
 
-    window.addEventListener("deviceorientation", (event) => {
-
-        let gamma = event.gamma || 0;
-
-        info.innerText =
-            `Gamma: ${gamma.toFixed(1)}°`;
-
-        // 最大移动范围
-        const maxOffset = 300;
-
-        // gamma通常在-45到45之间
-        let targetX = (gamma / 45) * maxOffset;
-
-        // 限制范围
-        targetX = Math.max(-maxOffset,
-                           Math.min(maxOffset, targetX));
-
-        // 平滑移动
-        currentX += (targetX - currentX) * 0.15;
-
-        ball.style.transform =
-            `translate(calc(-50% + ${currentX}px), -50%)`;
-
-    });
-
-    function animate() {
-        requestAnimationFrame(animate);
+    for(let i=0;i<6;i++){
+        const face = document.createElement("div");
+        face.className = "face";
+        face.style.width = size+"px";
+        face.style.height = size+"px";
+        faces.push(face);
+        box.appendChild(face);
     }
 
-    animate();
+    faces[0].style.transform =
+        `translateZ(${size/2}px)`;
+
+    faces[1].style.transform =
+        `rotateY(180deg) translateZ(${size/2}px)`;
+
+    faces[2].style.transform =
+        `rotateY(90deg) translateZ(${size/2}px)`;
+
+    faces[3].style.transform =
+        `rotateY(-90deg) translateZ(${size/2}px)`;
+
+    faces[4].style.transform =
+        `rotateX(90deg) translateZ(${size/2}px)`;
+
+    faces[5].style.transform =
+        `rotateX(-90deg) translateZ(${size/2}px)`;
+
+    box.style.transform =
+        `translate3d(${x}px,${y}px,${z}px)`;
+
+    world.appendChild(box);
 }
 
-// iPhone
-if (
+for(let z=-1200; z<=0; z+=200){
+
+    createBox(
+        100,
+        (Math.random()-0.5)*600,
+        (Math.random()-0.5)*400,
+        z
+    );
+}
+
+let pitch = 0;
+let yaw = 0;
+
+function updateView(){
+
+    world.style.transform = `
+        translate3d(0,0,0)
+        rotateX(${pitch}deg)
+        rotateY(${yaw}deg)
+    `;
+
+    requestAnimationFrame(updateView);
+}
+
+updateView();
+
+function startGyro(){
+
+    document.getElementById("startBtn").style.display="none";
+
+    window.addEventListener("deviceorientation",(e)=>{
+
+        yaw = (e.gamma || 0) * 0.8;
+        pitch = -(e.beta || 0) * 0.4;
+
+    });
+}
+
+if(
     typeof DeviceOrientationEvent !== "undefined" &&
     typeof DeviceOrientationEvent.requestPermission === "function"
-) {
+){
 
     document.getElementById("startBtn")
-        .addEventListener("click", async () => {
+        .onclick = async ()=>{
 
-        try {
-            const permission =
-                await DeviceOrientationEvent.requestPermission();
+        const result =
+            await DeviceOrientationEvent.requestPermission();
 
-            if (permission === "granted") {
-                startGyro();
-            }
-        } catch (e) {
-            alert(e);
+        if(result==="granted"){
+            startGyro();
         }
-    });
+    };
 
-} else {
+}else{
 
     document.getElementById("startBtn")
-        .addEventListener("click", startGyro);
+        .onclick = startGyro;
 }
+
+document.addEventListener("mousemove",(e)=>{
+
+    const x = e.clientX/window.innerWidth - 0.5;
+    const y = e.clientY/window.innerHeight - 0.5;
+
+    yaw = x * 60;
+    pitch = -y * 40;
+});
 </script>
 
 </body>
