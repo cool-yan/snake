@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gyroscope Test</title>
+
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    background: #222;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#ball {
+    width: 80px;
+    height: 80px;
+    background: red;
+    border-radius: 50%;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#info {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    color: white;
+    font-size: 20px;
+}
+
+#startBtn {
+    position: fixed;
+    bottom: 30px;
+    padding: 15px 30px;
+    font-size: 18px;
+}
+</style>
+</head>
+<body>
+
+<div id="ball"></div>
+<div id="info">Gamma: 0°</div>
+<button id="startBtn">Enable Gyroscope</button>
+
+<script>
+const ball = document.getElementById("ball");
+const info = document.getElementById("info");
+
+let currentX = 0;
+
+function startGyro() {
+
+    document.getElementById("startBtn").style.display = "none";
+
+    window.addEventListener("deviceorientation", (event) => {
+
+        let gamma = event.gamma || 0;
+
+        info.innerText =
+            `Gamma: ${gamma.toFixed(1)}°`;
+
+        // 最大移动范围
+        const maxOffset = 300;
+
+        // gamma通常在-45到45之间
+        let targetX = (gamma / 45) * maxOffset;
+
+        // 限制范围
+        targetX = Math.max(-maxOffset,
+                           Math.min(maxOffset, targetX));
+
+        // 平滑移动
+        currentX += (targetX - currentX) * 0.15;
+
+        ball.style.transform =
+            `translate(calc(-50% + ${currentX}px), -50%)`;
+
+    });
+
+    function animate() {
+        requestAnimationFrame(animate);
+    }
+
+    animate();
+}
+
+// iPhone
+if (
+    typeof DeviceOrientationEvent !== "undefined" &&
+    typeof DeviceOrientationEvent.requestPermission === "function"
+) {
+
+    document.getElementById("startBtn")
+        .addEventListener("click", async () => {
+
+        try {
+            const permission =
+                await DeviceOrientationEvent.requestPermission();
+
+            if (permission === "granted") {
+                startGyro();
+            }
+        } catch (e) {
+            alert(e);
+        }
+    });
+
+} else {
+
+    document.getElementById("startBtn")
+        .addEventListener("click", startGyro);
+}
+</script>
+
+</body>
+</html>
