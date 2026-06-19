@@ -147,17 +147,10 @@
   .btn-primary:hover{ background:#ff5b4f; }
   .btn-primary:disabled{ opacity:.4; cursor:not-allowed; box-shadow:none; }
 
-  .btn-confirm{
-    flex:1; padding:13px; border:none; border-radius:10px;
-    background:var(--green); color:#06210d; font-weight:700; font-size:14px;
-    cursor:pointer; font-family:var(--font-display);
-  }
-  .btn-confirm:disabled{ opacity:.35; cursor:not-allowed; }
-
   .btn-ghost{
-    padding:13px 16px; border-radius:10px; border:1px solid var(--border);
+    width:100%; padding:13px 16px; border-radius:10px; border:1px solid var(--border);
     background:transparent; color:var(--muted); font-size:14px; cursor:pointer;
-    font-family:var(--font-body);
+    font-family:var(--font-body); text-align:center;
   }
   .btn-ghost:hover{ border-color:var(--muted); color:var(--text); }
 
@@ -192,6 +185,7 @@
     overflow-y:auto;
     font-family:var(--font-mono);
     display:flex; flex-direction:column; gap:8px;
+    margin-bottom:16px;
   }
   .log:empty::before{
     content:"› 等待第一次输入 …";
@@ -240,7 +234,6 @@
   </header>
   <div class="eyebrow">终端 // 拆弹协议 · 输入正确密码以解除</div>
 
-  <!-- 配置面板 -->
   <div id="configPanel">
 
     <div class="config-block">
@@ -270,6 +263,14 @@
     </div>
 
     <div class="config-block">
+      <div class="section-label">是否显示正确位置</div>
+      <div class="pill-group" id="showPositionGroup">
+        <div class="pill active" data-value="true">高亮正确位置</div>
+        <div class="pill" data-value="false">不显示位置(仅计数量)</div>
+      </div>
+    </div>
+
+    <div class="config-block">
       <div class="section-label">猜测次数</div>
       <div class="pill-group" id="limitGroup">
         <div class="pill active" data-value="false">不限次数</div>
@@ -286,10 +287,11 @@
     <button class="btn-primary" id="startBtn">▶ 开始拆弹</button>
   </div>
 
-  <!-- 游戏面板 -->
   <div id="gamePanel" class="hidden">
 
     <div class="status-chips" id="statusChips"></div>
+
+    <div class="log" id="log"></div>
 
     <div class="banner" id="banner">
       <h2 id="bannerTitle"></h2>
@@ -299,11 +301,9 @@
     <div class="slots" id="slots"></div>
 
     <div class="action-row">
-      <button class="btn-confirm" id="confirmBtn" disabled>确认</button>
+      <button class="btn-confirm" id="confirmBtn" style="display: none;" disabled>确认</button>
       <button class="btn-ghost" id="resetBtn">重新设置</button>
     </div>
-
-    <div class="log" id="log"></div>
   </div>
 
 </div>
@@ -314,12 +314,14 @@
   let digitCount = 4;
   let allowRepeat = false;
   let showB = false;
+  let showPosition = true; // 新增：是否显示高亮位置
   let limited = false;
   let limit = 8;
 
   let secret = [];
   let attempts = 0;
   let over = false;
+  let isSubmitting = false; // 用于防止自动提交冲突的锁
 
   // ---------- 配置面板交互 ----------
   const digitCountValue = document.getElementById('digitCountValue');
@@ -338,6 +340,7 @@
 
   setupPillGroup('repeatGroup', v => { allowRepeat = v; });
   setupPillGroup('hintGroup', v => { showB = v; });
+  setupPillGroup('showPositionGroup', v => { showPosition = v; }); // 绑定新选项
   setupPillGroup('limitGroup', v => {
     limited = v;
     document.getElementById('limitInputWrap').classList.toggle('show', v);
@@ -360,6 +363,7 @@
     secret = generateSecret(digitCount, allowRepeat);
     attempts = 0;
     over = false;
+    isSubmitting = false;
 
     document.getElementById('configPanel').classList.add('hidden');
     document.getElementById('gamePanel').classList.remove('hidden');
@@ -398,6 +402,7 @@
       <div class="chip">位数 ${digitCount}</div>
       <div class="chip">${allowRepeat ? '可重复' : '不重复'}</div>
       <div class="chip">${showB ? 'A/B 提示' : '仅完全正确'}</div>
+      <div class="chip">${showPosition ? '显示位置' : '隐藏位置'}</div>
       <div class="chip">${usedText}</div>
     `;
   }
@@ -464,9 +469,19 @@
   function updateConfirmState(slots){
     const filled = slots.every(s => s.value.length === 1);
     document.getElementById('confirmBtn').disabled = !filled || over;
+    
+    // 如果全部输完，并且游戏没有结束、没有在提交中，则自动触发检查
+    if (filled && !over && !isSubmitting) {
+      isSubmitting = true;
+      // 给一点微小的延迟，让最后一个数字在界面上渲染出来，体验更丝滑
+      setTimeout(() => {
+        submitGuess();
+        isSubmitting = false;
+      }, 80);
+    }
   }
 
-  // ---------- 反馈计算 ----------
+  // ---------- 反反馈计算 ----------
   function computeFeedback(secretArr, guessArr){
     const n = secretArr.length;
     let A = 0;
@@ -492,6 +507,7 @@
   function submitGuess(){
     if (over) return;
     const slots = window._slots;
+    if (!slots) return;
     const guess = slots.map(s => s.value);
     if (guess.some(v => v.length !== 1)) return;
 
@@ -518,9 +534,12 @@
     const log = document.getElementById('log');
     const entry = document.createElement('div');
     entry.className = 'log-entry';
+    
+    // 根据是否允许显示位置（showPosition）来决定要不要给 log-chip 加上 'hit' (绿色高亮)
     const chips = guess.map((d, i) =>
-      `<span class="log-chip${hitMask[i] ? ' hit' : ''}">${d}</span>`
+      `<span class="log-chip${(showPosition && hitMask[i]) ? ' hit' : ''}">${d}</span>`
     ).join('');
+    
     const resultText = showB
       ? `<span class="a">完全正确 ${A}</span> 位 · <span class="b">数字对位置错 ${B}</span> 个`
       : `<span class="a">完全正确 ${A}</span> 位`;
