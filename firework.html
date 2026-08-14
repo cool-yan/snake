@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Fireworks Simulation</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #020208;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            cursor: crosshair;
+        }
+        .instruction-layer {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            color: #ffffff;
+            text-align: center;
+            pointer-events: none;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.9);
+            animation: pulse 2.5s infinite ease-in-out;
+        }
+        h1 {
+            margin: 0 0 6px 0;
+            font-size: 1.6rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+        p {
+            margin: 0;
+            font-size: 0.9rem;
+            font-weight: 400;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; transform: translateX(-50%) scale(0.98); }
+            50% { opacity: 0.9; transform: translateX(-50%) scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="instruction-layer">
+        <h1>Night Sky Canvas</h1>
+        <p>Click or tap anywhere to launch fireworks</p>
+    </div>
+
+    <canvas id="fireworksCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('fireworksCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Setup fluid reactive widths and heights
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        // Arrays to manage active simulation objects
+        const fireworks = [];
+        const particles = [];
+
+        // Track screen resizing to dynamically adjust canvas scale
+        window.addEventListener('resize', () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        });
+
+        // Firework Trail / Rocket Class
+        class Firework {
+            constructor(startX, startY, targetX, targetY) {
+                this.x = startX;
+                this.y = startY;
+                this.startX = startX;
+                this.startY = startY;
+                this.targetX = targetX;
+                this.targetY = targetY;
+                
+                // Track total distance to calculate progression
+                this.distanceToTarget = this.getDistance(startX, startY, targetX, targetY);
+                this.distanceTraveled = 0;
+                
+                // Motion math
+                this.angle = Math.atan2(targetY - startY, targetX - startX);
+                this.speed = 2.5;
+                this.acceleration = 1.04;
+                
+                // History trail for trailing line effect
+                this.trail = [];
+                this.trailLength = 3;
+                while (this.trailLength--) {
+                    this.trail.push([this.x, this.y]);
+                }
+                
+                // Visual properties
+                this.hue = Math.floor(Math.random() * 360);
+                this.brightness = Math.floor(Math.random() * 21) + 60; // 60% - 80%
+            }
+
+            getDistance(x1, y1, x2, y2) {
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+            update(index) {
+                // Add current positions to trail, remove oldest entries
+                this.trail.pop();
+                this.trail.unshift([this.x, this.y]);
+                
+                // Accelerate the rocket
+                this.speed *= this.acceleration;
+                
+                const vx = Math.cos(this.angle) * this.speed;
+                const vy = Math.sin(this.angle) * this.speed;
+                
+                this.distanceTraveled = this.getDistance(this.startX, this.startY, this.x + vx, this.y + vy);
+                
+                if (this.distanceTraveled >= this.distanceToTarget) {
+                    // Detonate firework splash shell
+                    createExplosionShell(this.targetX, this.targetY, this.hue);
+                    fireworks.splice(index, 1);
+                } else {
+                    this.x += vx;
+                    this.y += vy;
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                // Draw line from oldest recorded trail coordinate to current position
+                ctx.moveTo(this.trail[this.trail.length - 1][0], this.trail[this.trail.length - 1][1]);
+                ctx.lineTo(this.x, this.y);
+                ctx.strokeStyle = `hsl(${this.hue}, 100%, ${this.brightness}%)`;
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+            }
+        }
+
+        // Individual Explosion Particle Class
+        class Particle {
+            constructor(x, y, hue) {
+                this.x = x;
+                this.y = y;
+                
+                // Random omnidirectional trajectory angles and velocity thresholds
+                this.angle = Math.random() * Math.PI * 2;
+                this.speed = Math.random() * 7 + 1.5;
+                
+                // Physics constants
+                this.friction = 0.96;
+                this.gravity = 0.15;
+                
+                // Color parameters with subtle hue variation per shard
+                this.hue = hue + Math.floor(Math.random() * 41 - 20);
+                this.brightness = Math.floor(Math.random() * 31) + 60; // 60% - 90%
+                this.alpha = 1;
+                this.decay = Math.random() * 0.012 + 0.012; // Lifespan decay variation
+                
+                // Sparkling trail history
+                this.trail = [];
+                this.trailLength = 5;
+                while (this.trailLength--) {
+                    this.trail.push([this.x, this.y]);
+                }
+            }
+
+            update(index) {
+                this.trail.pop();
+                this.trail.unshift([this.x, this.y]);
+                
+                // Apply physics attributes
+                this.speed *= this.friction;
+                this.x += Math.cos(this.angle) * this.speed;
+                this.y += Math.sin(this.angle) * this.speed + this.gravity;
+                
+                // Fade out particle transparency over runtime duration
+                this.alpha -= this.decay;
+                
+                if (this.alpha <= this.decay) {
+                    particles.splice(index, 1);
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.moveTo(this.trail[this.trail.length - 1][0], this.trail[this.trail.length - 1][1]);
+                ctx.lineTo(this.x, this.y);
+                // Utilizing hsla to easily control opacity adjustments during frame draws
+                ctx.strokeStyle = `hsla(${this.hue}, 100%, ${this.brightness}%, ${this.alpha})`;
+                ctx.lineWidth = Math.random() * 1.5 + 1.2;
+                ctx.stroke();
+            }
+        }
+
+        // Helper to spawn a dense particle splash shell cluster
+        function createExplosionShell(x, y, hue) {
+            let count = 70 + Math.floor(Math.random() * 40); // 70 to 110 sparks
+            while (count--) {
+                particles.push(new Particle(x, y, hue));
+            }
+        }
+
+        // Unified Pointer Handler (Handles desktop clicks and mobile touch tabs cleanly)
+        window.addEventListener('pointerdown', (e) => {
+            if (e.isPrimary) {
+                // Rockets launch from a randomized bottom screen offset coordinate
+                const launchX = width / 2 + (Math.random() * 140 - 70);
+                const launchY = height;
+                fireworks.push(new Firework(launchX, launchY, e.clientX, e.clientY));
+            }
+        });
+
+        // Ambient automatic backdrop trigger timers
+        let ambientTick = 0;
+        let ambientInterval = 50;
+
+        // Core Graphics Animation Loop
+        function animationFrameLoop() {
+            requestAnimationFrame(animationFrameLoop);
+            
+            // Create a motion blur trail by painting over canvas using a semi-transparent layer
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillStyle = 'rgba(2, 2, 8, 0.22)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Switch blending to lighter mode to create beautiful overlapping additive color glows
+            ctx.globalCompositeOperation = 'lighter';
+            
+            // Render active ascending fireworks
+            let fIndex = fireworks.length;
+            while (fIndex--) {
+                fireworks[fIndex].draw();
+                fireworks[fIndex].update(fIndex);
+            }
+            
+            // Render active exploding particle shards
+            let pIndex = particles.length;
+            while (pIndex--) {
+                particles[pIndex].draw();
+                particles[pIndex].update(pIndex);
+            }
+            
+            // Launch ambient fireworks background scenery automatically if left idle
+            if (ambientTick >= ambientInterval) {
+                if (fireworks.length < 4) {
+                    const startX = Math.random() * width;
+                    const startY = height;
+                    const targetX = Math.random() * width;
+                    const targetY = Math.random() * (height * 0.6); // keep ambient explosions in top 60% sky area
+                    fireworks.push(new Firework(startX, startY, targetX, targetY));
+                    ambientInterval = Math.floor(Math.random() * 40) + 40;
+                }
+                ambientTick = 0;
+            } else {
+                ambientTick++;
+            }
+        }
+
+        // Guarantee document initialization prior to running loop functions
+        window.onload = function() {
+            animationFrameLoop();
+        };
+    </script>
+</body>
+</html>
