@@ -64,6 +64,19 @@
   .progress{font-size:13px; color:var(--muted); min-width:70px; text-align:center;}
   .colorItem{display:flex; flex-direction:column; align-items:center; gap:6px; font-size:13px; color:var(--muted);}
   .colorItem input[type=color]{width:44px; height:32px; padding:0; border:1px solid #333944; border-radius:6px; background:none; cursor:pointer;}
+  .timer-display{font-family:"Consolas",monospace; font-size:56px; text-align:center; padding:14px 0; user-select:none; transition:color .15s; letter-spacing:1px;}
+  .timer-display.armed{color:#e0a500;}
+  .timer-display.ready{color:#3ddc73;}
+  .timer-display.running{color:#5b8cff;}
+  .timerBtn{width:100%; max-width:320px; padding:22px; font-size:18px; user-select:none; -webkit-user-select:none; touch-action:none;}
+  .statsRow{display:flex; gap:10px; justify-content:center; margin-top:14px; flex-wrap:wrap;}
+  .statBox{background:var(--panel2); border-radius:10px; padding:10px 18px; text-align:center; min-width:80px;}
+  .statLabel{font-size:12px; color:var(--muted);}
+  .statVal{font-size:18px; font-weight:600; margin-top:2px;}
+  .historyList{max-height:220px; overflow-y:auto; margin-top:14px; border-top:1px solid #2a2f38; padding-top:6px;}
+  .histItem{display:flex; justify-content:space-between; align-items:center; padding:6px 4px; font-size:14px; border-bottom:1px solid #22262e;}
+  .histItem .delBtn{background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer; padding:0 6px;}
+  .histItem .delBtn:hover{color:#e05555;}
   @media (max-width:480px){
     .net{grid-template-columns:repeat(4, 46px); grid-template-rows:repeat(3, 46px);}
   }
@@ -135,6 +148,39 @@
       ⚠️ 说明：这里给出的还原步骤是「打乱公式的严格逆序」，数学上保证一定能把魔方还原，
       步数与打乱步数相同（并非全局最少步数）。真正的「最短步数还原」（如 Kociemba 二阶段算法／上帝之数求解）
       需要复杂的搜索算法，计算量较大，本页面暂未实现最优求解器，先提供这个一定正确、逻辑简单的还原方案。
+    </div>
+  </div>
+  <div class="card">
+    <div class="label">⏱ 计时器</div>
+    <div class="timer-display" id="timerDisplay">0.00</div>
+    <div class="note" id="timerHint" style="text-align:center; margin-top:0;">
+      电脑：按住空格键（变绿后）松开开始计时，计时中再按一次空格停止<br>
+      手机：按住下方按钮，变绿后松开开始，计时中点一下停止
+    </div>
+    <div class="row" style="margin-top:12px;">
+      <button class="timerBtn" id="timerTouchBtn">按住 / 松开 / 点击</button>
+    </div>
+    <div class="row" style="margin-top:16px;">
+      <label style="color:var(--muted); font-size:14px;">平均：
+        <select id="avgSelect">
+          <option value="5">最近 5 次</option>
+          <option value="12" selected>最近 12 次</option>
+          <option value="50">最近 50 次</option>
+          <option value="100">最近 100 次</option>
+          <option value="all">全部</option>
+        </select>
+      </label>
+      <button class="secondary" id="clearRecordsBtn">🗑 清空记录</button>
+    </div>
+    <div class="statsRow">
+      <div class="statBox"><div class="statLabel">总次数</div><div class="statVal" id="statCount">0</div></div>
+      <div class="statBox"><div class="statLabel">所选平均</div><div class="statVal" id="statAvg">--</div></div>
+      <div class="statBox"><div class="statLabel">最好成绩</div><div class="statVal" id="statBest">--</div></div>
+    </div>
+    <div class="historyList" id="historyList"></div>
+    <div class="note">
+      记录保存在浏览器 Cookie 中（同一浏览器下次打开还在，换浏览器/清缓存会丢失），最多保留最近 200 次成绩。
+      "平均"是所选次数范围内的简单算术平均，不是官方 ao5/ao12 去掉最好最差的算法。每次停表会自动生成下一个打乱。
     </div>
   </div>
 </div>
@@ -361,7 +407,174 @@ document.getElementById('resetColorBtn').addEventListener('click', ()=>{
   applyColors(DEFAULT_COLORS);
 });
 
-// 初始生成一次
+/* ===================== Cookie 记录存取 ===================== */
+function setCookie(name, value, days){
+  const d = new Date(); d.setTime(d.getTime() + days*24*60*60*1000);
+  document.cookie = name + '=' + encodeURIComponent(value) + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
+}
+function getCookie(name){
+  const cname = name + '=';
+  const parts = document.cookie.split(';');
+  for(let p of parts){
+    p = p.trim();
+    if(p.indexOf(cname) === 0) return decodeURIComponent(p.substring(cname.length));
+  }
+  return null;
+}
+const COOKIE_NAME = 'cubeTimerRecords_v1';
+const MAX_RECORDS = 200;
+let records = []; // 毫秒数组
+function loadRecords(){
+  const raw = getCookie(COOKIE_NAME);
+  if(raw){
+    try{ const arr = JSON.parse(raw); if(Array.isArray(arr)) records = arr; }catch(e){ records = []; }
+  }
+}
+function saveRecords(){
+  if(records.length > MAX_RECORDS) records = records.slice(records.length - MAX_RECORDS);
+  setCookie(COOKIE_NAME, JSON.stringify(records), 365);
+}
+
+/* ===================== 时间格式化 ===================== */
+function formatTime(ms){
+  const totalCs = Math.round(ms/10);
+  const cs = totalCs % 100;
+  const totalSec = Math.floor(totalCs/100);
+  const sec = totalSec % 60;
+  const min = Math.floor(totalSec/60);
+  const csStr = String(cs).padStart(2,'0');
+  if(min>0) return `${min}:${String(sec).padStart(2,'0')}.${csStr}`;
+  return `${sec}.${csStr}`;
+}
+
+/* ===================== 计时器状态机 =====================
+   idle -> (按下) armed -> (300ms后) ready -> (松开) running -> (再按下) idle(记录成绩)
+*/
+let timerState = 'idle';
+let armTimeout = null;
+let startTs = 0;
+let rafId = null;
+
+const timerDisplay = document.getElementById('timerDisplay');
+const timerTouchBtn = document.getElementById('timerTouchBtn');
+
+function setTimerVisual(state){
+  timerDisplay.classList.remove('armed','ready','running');
+  if(state==='armed' || state==='ready' || state==='running') timerDisplay.classList.add(state);
+}
+function armStart(){
+  if(timerState==='idle'){
+    timerState='armed';
+    setTimerVisual('armed');
+    armTimeout = setTimeout(()=>{
+      if(timerState==='armed'){ timerState='ready'; setTimerVisual('ready'); }
+    }, 300);
+  } else if(timerState==='running'){
+    stopTimer();
+  }
+}
+function armEnd(){
+  if(timerState==='armed'){
+    clearTimeout(armTimeout);
+    timerState='idle';
+    setTimerVisual('idle');
+  } else if(timerState==='ready'){
+    startTimer();
+  }
+}
+function startTimer(){
+  timerState='running';
+  setTimerVisual('running');
+  startTs = performance.now();
+  tick();
+}
+function tick(){
+  const elapsed = performance.now()-startTs;
+  timerDisplay.textContent = formatTime(elapsed);
+  rafId = requestAnimationFrame(tick);
+}
+function stopTimer(){
+  cancelAnimationFrame(rafId);
+  const elapsed = performance.now()-startTs;
+  timerState='idle';
+  setTimerVisual('idle');
+  timerDisplay.textContent = formatTime(elapsed);
+  recordTime(elapsed);
+}
+function recordTime(ms){
+  records.push(Math.round(ms));
+  saveRecords();
+  renderStats();
+  renderHistory();
+  newScramble(); // 自动生成下一个打乱
+}
+
+// 键盘：空格
+document.addEventListener('keydown', (e)=>{
+  if(e.code !== 'Space') return;
+  const tag = document.activeElement ? document.activeElement.tagName : '';
+  if(tag==='SELECT' || tag==='INPUT' || tag==='TEXTAREA') return;
+  e.preventDefault();
+  if(e.repeat) return;
+  armStart();
+});
+document.addEventListener('keyup', (e)=>{
+  if(e.code !== 'Space') return;
+  const tag = document.activeElement ? document.activeElement.tagName : '';
+  if(tag==='SELECT' || tag==='INPUT' || tag==='TEXTAREA') return;
+  e.preventDefault();
+  armEnd();
+});
+// 触屏 / 鼠标按钮
+function btnDown(e){ e.preventDefault(); armStart(); }
+function btnUp(e){ e.preventDefault(); armEnd(); }
+timerTouchBtn.addEventListener('touchstart', btnDown, {passive:false});
+timerTouchBtn.addEventListener('touchend', btnUp, {passive:false});
+timerTouchBtn.addEventListener('mousedown', btnDown);
+timerTouchBtn.addEventListener('mouseup', btnUp);
+timerTouchBtn.addEventListener('mouseleave', ()=>{ if(timerState==='armed') armEnd(); });
+
+/* ===================== 统计与历史 ===================== */
+function computeAvg(list){
+  if(list.length===0) return null;
+  return list.reduce((a,b)=>a+b,0)/list.length;
+}
+function renderStats(){
+  const sel = document.getElementById('avgSelect').value;
+  const list = sel==='all' ? records : records.slice(Math.max(0, records.length - parseInt(sel,10)));
+  document.getElementById('statCount').textContent = records.length;
+  const avg = computeAvg(list);
+  document.getElementById('statAvg').textContent = avg!=null ? formatTime(avg) : '--';
+  const best = records.length ? Math.min(...records) : null;
+  document.getElementById('statBest').textContent = best!=null ? formatTime(best) : '--';
+}
+document.getElementById('avgSelect').addEventListener('change', renderStats);
+function renderHistory(){
+  const el = document.getElementById('historyList');
+  el.innerHTML = records.slice().reverse().map((t,i)=>{
+    const realIdx = records.length-1-i;
+    return `<div class="histItem"><span>#${realIdx+1}</span><span>${formatTime(t)}</span><button class="delBtn" data-idx="${realIdx}">×</button></div>`;
+  }).join('');
+  el.querySelectorAll('.delBtn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const idx = parseInt(btn.dataset.idx,10);
+      records.splice(idx,1);
+      saveRecords(); renderStats(); renderHistory();
+    });
+  });
+}
+document.getElementById('clearRecordsBtn').addEventListener('click', ()=>{
+  if(confirm('确定要清空所有计时记录吗？此操作不可恢复。')){
+    records = [];
+    saveRecords();
+    renderStats(); renderHistory();
+  }
+});
+
+// 初始化
+loadRecords();
+renderStats();
+renderHistory();
 newScramble();
 </script>
 </body>
