@@ -65,8 +65,7 @@
   .colorItem{display:flex; flex-direction:column; align-items:center; gap:6px; font-size:13px; color:var(--muted);}
   .colorItem input[type=color]{width:44px; height:32px; padding:0; border:1px solid #333944; border-radius:6px; background:none; cursor:pointer;}
   .timer-display{font-family:"Consolas",monospace; font-size:56px; text-align:center; padding:14px 0; user-select:none; transition:color .15s; letter-spacing:1px;}
-  .timer-display.armed{color:#e0a500;}
-  .timer-display.ready{color:#3ddc73;}
+  .timer-display.inspecting{color:#e0a500;}
   .timer-display.running{color:#5b8cff;}
   .timerBtn{width:100%; max-width:320px; padding:22px; font-size:18px; user-select:none; -webkit-user-select:none; touch-action:none;}
   .statsRow{display:flex; gap:10px; justify-content:center; margin-top:14px; flex-wrap:wrap;}
@@ -154,8 +153,8 @@
     <div class="label">⏱ 计时器</div>
     <div class="timer-display" id="timerDisplay">0.00</div>
     <div class="note" id="timerHint" style="text-align:center; margin-top:0;">
-      电脑：按住空格键（变绿后）松开开始计时，计时中再按一次空格停止<br>
-      手机：按住下方按钮，变绿后松开开始，计时中点一下停止
+      电脑：按住空格开始倒计时（15 秒），松开即开始计时，倒计时结束会自动开始；计时中再按一次空格停止<br>
+      手机：按住下方按钮开始倒计时，松开即开始计时，倒计时结束自动开始；计时中点一下停止
     </div>
     <div class="row" style="margin-top:12px;">
       <button class="timerBtn" id="timerTouchBtn">按住 / 松开 / 点击</button>
@@ -448,10 +447,10 @@ function formatTime(ms){
 }
 
 /* ===================== 计时器状态机 =====================
-   idle -> (按下) armed -> (300ms后) ready -> (松开) running -> (再按下) idle(记录成绩)
+   idle -> (按下) inspecting（15秒倒计时）-> (松开 或 倒计时到0) running -> (再按下) idle(记录成绩)
 */
+const INSPECTION_MS = 15000;
 let timerState = 'idle';
-let armTimeout = null;
 let startTs = 0;
 let rafId = null;
 
@@ -459,44 +458,51 @@ const timerDisplay = document.getElementById('timerDisplay');
 const timerTouchBtn = document.getElementById('timerTouchBtn');
 
 function setTimerVisual(state){
-  timerDisplay.classList.remove('armed','ready','running');
-  if(state==='armed' || state==='ready' || state==='running') timerDisplay.classList.add(state);
+  timerDisplay.classList.remove('inspecting','running');
+  if(state==='inspecting' || state==='running') timerDisplay.classList.add(state);
 }
 function armStart(){
   if(timerState==='idle'){
-    timerState='armed';
-    setTimerVisual('armed');
-    armTimeout = setTimeout(()=>{
-      if(timerState==='armed'){ timerState='ready'; setTimerVisual('ready'); }
-    }, 300);
+    timerState = 'inspecting';
+    setTimerVisual('inspecting');
+    startTs = performance.now();
+    tick();
   } else if(timerState==='running'){
     stopTimer();
   }
 }
 function armEnd(){
-  if(timerState==='armed'){
-    clearTimeout(armTimeout);
-    timerState='idle';
-    setTimerVisual('idle');
-  } else if(timerState==='ready'){
+  if(timerState==='inspecting'){
     startTimer();
   }
+  // 若已经因倒计时到 0 自动开始（running），松开不做任何事，需要再次按下才能停止
 }
 function startTimer(){
-  timerState='running';
+  timerState = 'running';
   setTimerVisual('running');
   startTs = performance.now();
   tick();
 }
 function tick(){
-  const elapsed = performance.now()-startTs;
-  timerDisplay.textContent = formatTime(elapsed);
-  rafId = requestAnimationFrame(tick);
+  const now = performance.now();
+  if(timerState === 'inspecting'){
+    const remaining = INSPECTION_MS - (now - startTs);
+    if(remaining <= 0){
+      startTimer(); // 倒计时结束，自动开始计时
+      return;
+    }
+    timerDisplay.textContent = (remaining/1000).toFixed(1) + 's';
+    rafId = requestAnimationFrame(tick);
+  } else if(timerState === 'running'){
+    const elapsed = now - startTs;
+    timerDisplay.textContent = formatTime(elapsed);
+    rafId = requestAnimationFrame(tick);
+  }
 }
 function stopTimer(){
   cancelAnimationFrame(rafId);
   const elapsed = performance.now()-startTs;
-  timerState='idle';
+  timerState = 'idle';
   setTimerVisual('idle');
   timerDisplay.textContent = formatTime(elapsed);
   recordTime(elapsed);
@@ -532,7 +538,7 @@ timerTouchBtn.addEventListener('touchstart', btnDown, {passive:false});
 timerTouchBtn.addEventListener('touchend', btnUp, {passive:false});
 timerTouchBtn.addEventListener('mousedown', btnDown);
 timerTouchBtn.addEventListener('mouseup', btnUp);
-timerTouchBtn.addEventListener('mouseleave', ()=>{ if(timerState==='armed') armEnd(); });
+timerTouchBtn.addEventListener('mouseleave', ()=>{ if(timerState==='inspecting') armEnd(); });
 
 /* ===================== 统计与历史 ===================== */
 function computeAvg(list){
